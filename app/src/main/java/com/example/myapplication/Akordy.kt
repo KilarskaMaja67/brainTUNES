@@ -39,7 +39,7 @@ class Akordy(context: Context) {
         Akord.F to soundPool.load(context, R.raw.akord_f, 1),
     )
 
-    fun graj(akord: Akord) {
+    fun play(akord: Akord) {
         val id = dzwieki.getValue(akord)
         if (id !in zaladowane) {
             Log.w("Akordy", "$akord jeszcze sie laduje")
@@ -55,7 +55,7 @@ class Akordy(context: Context) {
 }
 
 /** Krotka animacja "wcisniecia" przycisku. */
-fun Button.animujKlik() {
+fun Button.animation_click() {
     animate()
         .scaleX(1.08f)
         .scaleY(1.08f)
