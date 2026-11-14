@@ -67,9 +67,11 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         AppControler.ustawAkcje(
-            lewo = { left() },
-            prawo = { right() },
-            mrugniecie = { choose() },
+            gora = { ruchWGore() },
+            dol = { ruchWDol() },
+            prawo = { zatwierdzWybor() },
+            lewo = null,
+            mrugniecie = null
         )
     }
 
@@ -90,18 +92,25 @@ class MainActivity : AppCompatActivity() {
 
     // pod opaske
 
-    fun right() {
-        selected_index = (selected_index + 1) % list_buttons.size
-        update_look()
+    private fun ruchWGore() {
+        runOnUiThread {
+            // Jeśli jesteś na samej górze (0), przeskakuje na ostatni przycisk na dole
+            selected_index = if (selected_index - 1 < 0) list_buttons.size - 1 else selected_index - 1
+            update_look()
+        }
     }
 
-    fun left() {
-        selected_index = if (selected_index - 1 < 0) list_buttons.size - 1 else selected_index - 1
-        update_look()
+    private fun ruchWDol() {
+        runOnUiThread {
+            // Przesuwa zaznaczenie w dół, a po ostatnim przycisku wraca na górę (0)
+            selected_index = (selected_index + 1) % list_buttons.size
+            update_look()
+        }
     }
 
-    fun choose() {
-        // Udaje kliknięcie palcem w ten przycisk, który jest teraz powiększony
-        list_buttons[selected_index].performClick()
+    private fun zatwierdzWybor() {
+        runOnUiThread {
+            list_buttons[selected_index].performClick()
+        }
     }
 }

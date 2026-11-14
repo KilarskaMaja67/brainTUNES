@@ -81,7 +81,7 @@ class PlayActivity : AppCompatActivity() {
 
             if (blink_counter == 1) {
                 exitHintText.text = "to exit, blink once more"
-                handler.postDelayed(reset_blinks_Runnable, 2500)
+                handler.postDelayed(reset_blinks_Runnable, 5000)
             } else if (blink_counter >= 2) {
                 finish()
             }
