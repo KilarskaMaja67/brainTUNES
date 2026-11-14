@@ -195,7 +195,7 @@ class TutorialActivity : AppCompatActivity() {
 
     private fun onGest(gest: Gest) {
         // kazdy ruch zawsze gra swoj akord - uzytkownik slyszy, co zrobil
-        akordy.graj(gest.akord)
+        akordy.play(gest.akord)
 
         if (koniec || czekam) return
         val krok = kroki[indeks]
