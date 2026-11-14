@@ -26,9 +26,10 @@ sealed interface EegEvent {
     data class Command(val command: EegCommand) : EegEvent
 
     /**
-     * Krok kalibracji - co uzytkownik ma teraz zrobic. Przyklady wartosci `step`:
-     * "REST", "GET_READY", "WAIT", "BLINK2 1/5", "BLINK1 3/5", "HEAD_L 1/3", "HEAD_P 2/3",
-     * "HEAD_GORA 1/3", "HEAD_DOL 3/3", "DONE", "FAIL"
+     * Krok kalibracji. Przyklady wartosci `step`:
+     * "REST", "GET_READY", "WAIT", "BLINK1 3/5", "BLINK2 1/5", "HEAD_L 1/3", "HEAD_P 2/3",
+     * "HEAD_GORA 1/3", "HEAD_DOL 3/3", "CONTACT GOOD 25", "CONTACT WEAK 140",
+     * "RESULT BLINK=OK HEAD=WEAK", "DONE", "FAIL"
      */
     data class Calibration(val step: String) : EegEvent
 
@@ -56,6 +57,10 @@ class EegReceiver(
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected
 
+    /** Czy Python ma zapisana kalibracje: null = jeszcze nie wiadomo, true/false = odpowiedz z laptopa. */
+    private val _calibrated = MutableStateFlow<Boolean?>(null)
+    val calibrated: StateFlow<Boolean?> = _calibrated
+
     private var scope: CoroutineScope? = null
     private var socket: DatagramSocket? = null
     @Volatile private var lastPacketAt = 0L
@@ -82,7 +87,14 @@ class EegReceiver(
                 lastPacketAt = System.currentTimeMillis()
                 _connected.value = true
                 val msg = String(packet.data, 0, packet.length).trim()
-                if (msg == "HI") continue          // odpowiedz laptopa na HELLO - tylko "jestem"
+                if (msg.startsWith("HI")) {          // odpowiedz laptopa na HELLO: "jestem" + stan kalibracji
+                    when {
+                        msg.endsWith("NOT_CALIBRATED") -> _calibrated.value = false
+                        msg.endsWith("CALIBRATED") -> _calibrated.value = true
+                    }
+                    continue
+                }
+                if (msg == "CAL:DONE" || msg == "CAL:FAIL") _calibrated.value = true   // Python zapisal kalibracje
                 _events.tryEmit(parse(msg))
             }
         }
