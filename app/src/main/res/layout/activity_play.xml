@@ -7,15 +7,17 @@
 
     <Button
         android:id="@+id/AmolBtn"
-        android:layout_width="175dp"
-        android:layout_height="160dp"
-        android:text="Amol"
+        android:layout_width="150dp"
+        android:layout_height="135dp"
+        android:text="a"
+        android:textSize="50sp"
+        app:cornerRadius="35dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.932"
+        app:layout_constraintHorizontal_bias="0.542"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.76" />
+        app:layout_constraintVertical_bias="0.113" />
 
     <Button
         android:id="@+id/CdurBtn"
@@ -24,10 +26,10 @@
         android:text="Cdur"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.148"
+        app:layout_constraintHorizontal_bias="0.067"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.757" />
+        app:layout_constraintVertical_bias="0.42" />
 
     <Button
         android:id="@+id/GdurBtn"
@@ -39,7 +41,7 @@
         app:layout_constraintHorizontal_bias="0.932"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.419" />
+        app:layout_constraintVertical_bias="0.42" />
 
     <Button
         android:id="@+id/FdurBtn"
@@ -48,10 +50,10 @@
         android:text="Fdur"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.148"
+        app:layout_constraintHorizontal_bias="0.542"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.42" />
+        app:layout_constraintVertical_bias="0.721" />
 
     <Button
         android:id="@+id/backBtn"
