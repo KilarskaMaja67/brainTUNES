@@ -3,65 +3,80 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#FAF3D1">
 
-    <Button
-        android:id="@+id/AmolBtn"
-        android:layout_width="150dp"
-        android:layout_height="135dp"
-        android:text="a"
-        android:textSize="50sp"
-        app:cornerRadius="35dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.542"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.113" />
-
-    <Button
-        android:id="@+id/CdurBtn"
-        android:layout_width="175dp"
-        android:layout_height="160dp"
-        android:text="Cdur"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.067"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.42" />
 
     <Button
         android:id="@+id/GdurBtn"
-        android:layout_width="175dp"
-        android:layout_height="160dp"
-        android:text="Gdur"
+        android:layout_width="125dp"
+        android:layout_height="125dp"
+        android:gravity="center"
+        android:text="G"
+        android:textSize="50sp"
+        app:backgroundTint="#F0A8A8"
+        app:cornerRadius="35dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.932"
+        app:layout_constraintHorizontal_bias="0.944"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.42" />
+        app:layout_constraintVertical_bias="0.493" />
+
+    <Button
+        android:id="@+id/AmolBtn"
+        android:layout_width="125dp"
+        android:layout_height="125dp"
+        android:gravity="center"
+        android:text="a"
+        android:textSize="50sp"
+        app:backgroundTint="#F4C46C"
+        app:cornerRadius="35dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.493"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.287" />
 
     <Button
         android:id="@+id/FdurBtn"
-        android:layout_width="175dp"
-        android:layout_height="160dp"
-        android:text="Fdur"
+        android:layout_width="125dp"
+        android:layout_height="125dp"
+        android:gravity="center"
+        android:text="F"
+        android:textSize="50sp"
+        app:backgroundTint="#3B6E8C"
+        app:cornerRadius="35dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.542"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.721" />
+        app:layout_constraintVertical_bias="0.699" />
+
+    <Button
+        android:id="@+id/CdurBtn"
+        android:layout_width="125dp"
+        android:layout_height="125dp"
+        android:gravity="center"
+        android:text="C"
+        android:textSize="50sp"
+        app:backgroundTint="#6B2D2D"
+        app:cornerRadius="35dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.055"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.493" />
 
     <TextView
         android:id="@+id/exitHintText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="Aby wyjść, mrugnij dwukrotnie"
-        android:textSize="16sp"
+        android:text="blink twice to exit"
+        android:textSize="20sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
