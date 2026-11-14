@@ -60,11 +60,12 @@
         android:textStyle="bold" />
 
     <Button
-        android:id="@+id/btnJeszczeRaz"
+        android:id="@+id/btnPowtorz"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Jeszcze raz"
+        android:text="Powtórz samouczek  ➡"
+        android:textSize="18sp"
         android:visibility="gone" />
 
     <View
@@ -79,11 +80,5 @@
         android:layout_marginBottom="8dp"
         android:text="blink twice to exit"
         android:textSize="14sp" />
-
-    <Button
-        android:id="@+id/backBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Powrót" />
 
 </LinearLayout>

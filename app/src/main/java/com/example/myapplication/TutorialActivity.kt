@@ -15,8 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
  *   1. Poznaj ruchy      - "Przechyl glowe w PRAWO, aby zagrac G" (+ duza strzalka), 2 rundy
  *   2. Bez podpowiedzi   - "Zagraj a-moll" (kazdy akord 2x, losowo; po 2 pomylkach pojawia sie podpowiedz)
  *   3. Progresja         - C -> G -> a-moll -> F po kolei
- * Na koniec: wynik + "Jeszcze raz". Dwa mocne mrugniecia w kazdej chwili = powrot do menu.
- * Bez przyciskow akordow - tylko gesty (test bez opaski: symulator_komend.py).
+ * Na koniec: wynik + przycisk "Powtorz samouczek" (klikany glowa w PRAWO albo palcem).
+ * Dwa mocne mrugniecia w kazdej chwili = powrot do menu. (test bez opaski: symulator_komend.py)
  */
 class TutorialActivity : AppCompatActivity() {
 
@@ -37,8 +37,8 @@ class TutorialActivity : AppCompatActivity() {
     private lateinit var tvStrzalka: TextView
     private lateinit var tvPodpowiedz: TextView
     private lateinit var tvFeedback: TextView
-    private lateinit var btnJeszczeRaz: Button
     private lateinit var exitHintText: TextView
+    private lateinit var btnPowtorz: Button
 
     private lateinit var akordy: Akordy
     private val handler = Handler(Looper.getMainLooper())
@@ -73,12 +73,9 @@ class TutorialActivity : AppCompatActivity() {
         tvStrzalka = findViewById(R.id.tvStrzalka)
         tvPodpowiedz = findViewById(R.id.tvPodpowiedz)
         tvFeedback = findViewById(R.id.tvFeedback)
-        btnJeszczeRaz = findViewById(R.id.btnJeszczeRaz)
         exitHintText = findViewById(R.id.exitHintText)
-        exitHintText.text = "blink twice to exit"
-
-        findViewById<Button>(R.id.backBtn).setOnClickListener { finish() }
-        btnJeszczeRaz.setOnClickListener { start() }
+        btnPowtorz = findViewById(R.id.btnPowtorz)
+        btnPowtorz.setOnClickListener { start() }
 
         akordy = Akordy(this)
         start()
@@ -145,7 +142,7 @@ class TutorialActivity : AppCompatActivity() {
         indeks = 0
         bledy = 0
         koniec = false
-        btnJeszczeRaz.visibility = View.GONE
+        btnPowtorz.visibility = View.GONE
         pasek.max = kroki.size
         pokazWstepFazy(1)
     }
@@ -233,7 +230,14 @@ class TutorialActivity : AppCompatActivity() {
         // kazdy ruch zawsze gra swoj akord - uzytkownik slyszy, co zrobil
         akordy.play(gest.akord)
 
-        if (koniec || czekam) return
+        if (koniec) {
+            if (gest == Gest.PRAWO) {              // ekran koncowy: glowa w prawo = "klika" Powtorz samouczek
+                btnPowtorz.isPressed = true
+                handler.postDelayed({ btnPowtorz.isPressed = false; btnPowtorz.performClick() }, 250)
+            }
+            return
+        }
+        if (czekam) return
         val krok = kroki[indeks]
         val cel = krok.gest
 
@@ -276,9 +280,9 @@ class TutorialActivity : AppCompatActivity() {
         tvFaza.text = "Gotowe!"
         tvPolecenie.text = "Samouczek ukończony 🎉"
         tvStrzalka.text = ""
-        tvPodpowiedz.text = "Trafność: $trafnosc%  (pomyłki: $bledy)\n\nMrugnij mocno 2×, aby wrócić do menu."
+        tvPodpowiedz.text = "Trafność: $trafnosc%  (pomyłki: $bledy)\n\nMrugnij mocno 2×, aby wrócić do menu"
         feedback("", ZIELONY)
-        btnJeszczeRaz.visibility = View.VISIBLE
+        btnPowtorz.visibility = View.VISIBLE
     }
 
     // ------------------------------------------------------------------ wyglad
