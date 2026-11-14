@@ -35,48 +35,48 @@ class MainActivity : AppCompatActivity() {
         // OBSŁUGA KLIKNIĘCIA PALCEM (działa teraz i jako plan awaryjny)
         configBtn.setOnClickListener {
             selected_index = 0
-            update_look()
+            updateLook()
             Toast.makeText(this, "selected: config", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, ConfigActivity::class.java))
         }
 
         tutorialBtn.setOnClickListener {
             selected_index = 1
-            update_look()
+            updateLook()
             Toast.makeText(this, "selected: tutorial", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, TutorialActivity::class.java))
         }
 
         playBtn.setOnClickListener {
             selected_index = 2
-            update_look()
+            updateLook()
             Toast.makeText(this, "selected: play", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, PlayActivity::class.java))
         }
 
         songBtn.setOnClickListener {
             selected_index = 3
-            update_look()
+            updateLook()
             startActivity(Intent(this, SongActivity::class.java))
         }
 
-        update_look()
+        updateLook()
     }
 
     // zeby appcontroler decydowalo co sie dzieje (gora/dol na tym ekranie nic nie robia)
     override fun onResume() {
         super.onResume()
         AppControler.ustawAkcje(
-            gora = { ruchWGore() },
-            dol = { ruchWDol() },
-            prawo = { zatwierdzWybor() },
+            gora = { upMove() },
+            dol = { downMove() },
+            prawo = { rightMove() },
             lewo = null,
             mrugniecie = null
         )
     }
 
     // powieksz przycisk
-    private fun update_look() {
+    private fun updateLook() {
         list_buttons.forEachIndexed { indeks, przycisk ->
             if (indeks == selected_index) {
                 przycisk.scaleX = 1.15f // Powiększenie w poziomie o 15%
@@ -92,23 +92,23 @@ class MainActivity : AppCompatActivity() {
 
     // pod opaske
 
-    private fun ruchWGore() {
+    private fun upMove() {
         runOnUiThread {
             // Jeśli jesteś na samej górze (0), przeskakuje na ostatni przycisk na dole
             selected_index = if (selected_index - 1 < 0) list_buttons.size - 1 else selected_index - 1
-            update_look()
+            updateLook()
         }
     }
 
-    private fun ruchWDol() {
+    private fun downMove() {
         runOnUiThread {
             // Przesuwa zaznaczenie w dół, a po ostatnim przycisku wraca na górę (0)
             selected_index = (selected_index + 1) % list_buttons.size
-            update_look()
+            updateLook()
         }
     }
 
-    private fun zatwierdzWybor() {
+    private fun rightMove() {
         runOnUiThread {
             list_buttons[selected_index].performClick()
         }
