@@ -9,60 +9,50 @@
         android:id="@+id/songListTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="wybierz piosenke"
+        android:text="Wybierz piosenkę"
         android:textSize="26sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.12" />
+        app:layout_constraintVertical_bias="0.14" />
 
     <Button
         android:id="@+id/song1Btn"
         android:layout_width="270dp"
         android:layout_height="65dp"
-        android:text="zawsze tam gdzie ty"
+        android:text="1. Zawsze tam gdzie ty"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.30" />
+        app:layout_constraintVertical_bias="0.34" />
 
     <Button
         android:id="@+id/song2Btn"
         android:layout_width="270dp"
         android:layout_height="65dp"
-        android:text=" piosenka 2"
+        android:text="2. Piosenka 2"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.45" />
+        app:layout_constraintVertical_bias="0.50" />
 
-    <Button
-        android:id="@+id/song3Btn"
-        android:layout_width="270dp"
-        android:layout_height="65dp"
-        android:text=" piosenka 3"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.60" />
-
-    <Button
-        android:id="@+id/backBtn"
+    <TextView
+        android:id="@+id/exitHintText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="wroc do menu"
+        android:gravity="center"
+        android:text="Aby wyjść, mrugnij dwukrotnie"
+        android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.82" />
+        app:layout_constraintVertical_bias="0.90" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
