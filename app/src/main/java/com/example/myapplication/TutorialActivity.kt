@@ -15,4 +15,11 @@ class TutorialActivity : AppCompatActivity() {
             finish()
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        AppControler.ustawAkcje(
+            gora = { finish() },          // glowa w gore = powrot
+        )
+    }
 }

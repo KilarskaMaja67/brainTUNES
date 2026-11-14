@@ -20,6 +20,26 @@ object AppControler {
     // opcjonalnie: ekran kalibracji moze pokazywac kroki ("BLINK2 1/5", "HEAD_L 2/3", "DONE"...)
     var naKrokKalibracji: ((String) -> Unit)? = null
 
+    /**
+     * Ustawia WSZYSTKIE akcje naraz - to, czego nie podasz, bedzie wylaczone (null).
+     * Wolaj w onResume() KAZDEGO ekranu, zeby nie zostaly akcje z poprzedniego ekranu.
+     */
+    fun ustawAkcje(
+        lewo: (() -> Unit)? = null,
+        prawo: (() -> Unit)? = null,
+        gora: (() -> Unit)? = null,
+        dol: (() -> Unit)? = null,
+        mrugniecie: (() -> Unit)? = null,
+        szczeka: (() -> Unit)? = null,
+    ) {
+        akcjaNaLewo = lewo
+        akcjaNaPrawo = prawo
+        akcjaNaGore = gora
+        akcjaNaDol = dol
+        akcjaNaMrugniecie = mrugniecie
+        akcjaNaSzczeke = szczeka
+    }
+
     // ---------- polaczenie z opaska (laptop z Pythonem) ----------
     private var eeg: EegReceiver? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)   // akcje wykonuja sie na watku UI

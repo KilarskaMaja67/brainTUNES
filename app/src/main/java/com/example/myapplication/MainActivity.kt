@@ -19,10 +19,10 @@ import com.example.myapplication.eeg.EegReceiver
 class MainActivity : AppCompatActivity() {
 
 
-    //ktory przycisk zaznaczony (0 = config, 1 = tutorial, 2 = play)
+    //ktory przycisk zaznaczony (0 = config, 1 = tutorial, 2 = play, 3 = song)
     private var selected_index = 0
 
-    //lista z 3 przyciskami z XML
+    //lista z 4 przyciskami z XML
     private lateinit var list_buttons: List<Button>
 
 
@@ -31,8 +31,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         //POLACZENIE Z OPASKA - uruchamia sie raz na cala aplikacje
-                // emulator: "10.0.2.2"; prawdziwy telefon: IP laptopa z `ipconfig`
-                AppControler.start(laptopIp = "10.0.2.2")
+        // emulator: "10.0.2.2"; prawdziwy telefon: IP laptopa z `ipconfig`
+        AppControler.start(laptopIp = "10.0.2.2")
 
 
         val configBtn = findViewById<Button>(R.id.configBtn)
@@ -40,7 +40,8 @@ class MainActivity : AppCompatActivity() {
         val playBtn = findViewById<Button>(R.id.playBtn)
         val songBtn = findViewById<Button>(R.id.songBtn)
 
-        list_buttons = listOf(configBtn, tutorialBtn, playBtn)
+        // songBtn dodany do listy - inaczej opaska nie mogla go wybrac
+        list_buttons = listOf(configBtn, tutorialBtn, playBtn, songBtn)
 
         // 3. OBSŁUGA KLIKNIĘCIA PALCEM (działa teraz i jako plan awaryjny)
         configBtn.setOnClickListener {
@@ -69,6 +70,7 @@ class MainActivity : AppCompatActivity() {
 
         songBtn.setOnClickListener{
             selected_index = 3
+            update_look()
             val intent = Intent(this, SongActivity::class.java)
             startActivity(intent)
         }
@@ -76,18 +78,17 @@ class MainActivity : AppCompatActivity() {
         update_look()
     }
 
-    // zeby appcontroler decydowalo co sie dzieje
+    // zeby appcontroler decydowalo co sie dzieje (gora/dol na tym ekranie nic nie robia)
     override fun onResume() {
         super.onResume()
-        AppControler.akcjaNaLewo = { left() }
-        AppControler.akcjaNaPrawo = { right() }
-        AppControler.akcjaNaMrugniecie = { choose() }
-        AppControler.akcjaNaGore = null      // na tym ekranie gora/dol nic nie robia
-        AppControler.akcjaNaDol = null
-        AppControler.akcjaNaSzczeke = null
+        AppControler.ustawAkcje(
+            lewo = { left() },
+            prawo = { right() },
+            mrugniecie = { choose() },
+        )
     }
 
-// powieksz przycisc
+    // powieksz przycisc
     private fun update_look() {
         list_buttons.forEachIndexed { indeks, przycisk ->
             if (indeks == selected_index) {
@@ -102,7 +103,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-   // pod opaske
+    // pod opaske
 
     fun right() {
         selected_index = (selected_index + 1) % list_buttons.size

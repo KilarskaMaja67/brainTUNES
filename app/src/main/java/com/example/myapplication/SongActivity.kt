@@ -57,10 +57,12 @@ class SongActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        AppControler.akcjaNaLewo = { ruchWLewo() }
-        AppControler.akcjaNaPrawo = { ruchWPrawo() }
-        AppControler.akcjaNaMrugniecie = { zatwierdzWybor() }
-        AppControler.akcjaNaSzczeke = null
+        AppControler.ustawAkcje(
+            lewo = { ruchWLewo() },
+            prawo = { ruchWPrawo() },
+            mrugniecie = { zatwierdzWybor() },
+            gora = { finish() },          // glowa w gore = powrot
+        )
     }
 
     private fun odswiezWyglad() {
@@ -78,22 +80,16 @@ class SongActivity : AppCompatActivity() {
     }
 
     fun ruchWPrawo() {
-        runOnUiThread {
-            zaznaczonyIndeks = (zaznaczonyIndeks + 1) % listaPiosenek.size
-            odswiezWyglad()
-        }
+        zaznaczonyIndeks = (zaznaczonyIndeks + 1) % listaPiosenek.size
+        odswiezWyglad()
     }
 
     fun ruchWLewo() {
-        runOnUiThread {
-            zaznaczonyIndeks = if (zaznaczonyIndeks - 1 < 0) listaPiosenek.size - 1 else zaznaczonyIndeks - 1
-            odswiezWyglad()
-        }
+        zaznaczonyIndeks = if (zaznaczonyIndeks - 1 < 0) listaPiosenek.size - 1 else zaznaczonyIndeks - 1
+        odswiezWyglad()
     }
 
     fun zatwierdzWybor() {
-        runOnUiThread {
-            listaPiosenek[zaznaczonyIndeks].performClick()
-        }
+        listaPiosenek[zaznaczonyIndeks].performClick()
     }
 }
