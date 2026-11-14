@@ -10,25 +10,15 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
-/**
- * SAMOUCZEK - uczy gestow opaski w 3 fazach:
- *   1. Poznaj ruchy      - "Przechyl glowe w PRAWO, aby zagrac G" (+ duza strzalka), 2 rundy
- *   2. Bez podpowiedzi   - "Zagraj a-moll" (kazdy akord 2x, losowo; po 2 pomylkach pojawia sie podpowiedz)
- *   3. Progresja         - C -> G -> a-moll -> F po kolei
- * Na koniec: wynik + przycisk "Powtorz samouczek" (klikany glowa w PRAWO albo palcem).
- * Dwa mocne mrugniecia w kazdej chwili = powrot do menu. (test bez opaski: symulator_komend.py)
- */
 class TutorialActivity : AppCompatActivity() {
 
-    /** Gesty glowy i ich akordy - tak samo jak w PlayActivity. */
     private enum class Gest(val akord: Akordy.Akord, val nazwa: String, val ruch: String, val strzalka: String) {
-        LEWO(Akordy.Akord.C, "C", "Przechyl głowę w LEWO", "⬅"),
-        PRAWO(Akordy.Akord.G, "G", "Przechyl głowę w PRAWO", "➡"),
-        GORA(Akordy.Akord.AM, "a-moll", "Odchyl głowę do GÓRY", "⬆"),
-        DOL(Akordy.Akord.F, "F", "Pochyl głowę w DÓŁ", "⬇"),
+        LEFT(Akordy.Akord.C, "C", "Tilt your head to the LEFT", "⬅"),
+        RIGHT(Akordy.Akord.G, "G", "Tilt your head to the RIGHT", "➡"),
+        UP(Akordy.Akord.AM, "a-moll", "Tilt your head UP", "⬆"),
+        DOWN(Akordy.Akord.F, "F", "Tilt your head DOWN", "⬇"),
     }
 
-    /** Jeden krok samouczka: faza, runda w fazie i jakiego ruchu glowy oczekujemy. */
     private data class Krok(val faza: Int, val gest: Gest, val runda: Int = 1)
 
     private lateinit var tvFaza: TextView
@@ -45,14 +35,13 @@ class TutorialActivity : AppCompatActivity() {
 
     private var kroki: List<Krok> = emptyList()
     private var indeks = 0
-    private var czekam = false              // przerwa po dobrym ruchu / miedzy fazami
+    private var czekam = false
     private var koniec = false
     private var bledy = 0
     private var bledyWKroku = 0
 
 
-    private val CZAS_NA_DRUGIE_MRUGNIECIE_MS = 4000L   // Python ignoruje mrugniecia przez ~1.2 s po komendzie,
-    // wiec drugie mrugniecie musi miec czas: 1.2-4 s po pierwszym
+    private val CZAS_NA_DRUGIE_MRUGNIECIE_MS = 4000L
     private var blink_counter = 0
     private val reset_blinks_Runnable = Runnable {
         blink_counter = 0
@@ -84,15 +73,14 @@ class TutorialActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         AppControler.ustawAkcje(
-            lewo = { onGest(Gest.LEWO) },
-            prawo = { onGest(Gest.PRAWO) },
-            gora = { onGest(Gest.GORA) },
-            dol = { onGest(Gest.DOL) },
-            mrugniecie = { blink_to_exit() },            // mocne mrugniecie = powrot do menu (jak na innych ekranach)
+            left = { onGest(Gest.LEFT) },
+            right = { onGest(Gest.RIGHT) },
+            up = { onGest(Gest.UP) },
+            down = { onGest(Gest.DOWN) },
+            blink = { blink_to_exit() },
         )
     }
 
-    // (runOnUiThread niepotrzebne - AppControler wywoluje akcje juz na watku UI)
     private fun blink_to_exit() {
         blink_counter++
         handler.removeCallbacks(reset_blinks_Runnable)
@@ -110,11 +98,9 @@ class TutorialActivity : AppCompatActivity() {
         akordy.zwolnij()
     }
 
-    // ------------------------------------------------------------------ przebieg
 
     private fun zbudujKroki(): List<Krok> {
-        // faza 1: dwie rundy z podpowiedziami - najpierw po kolei, potem w innej kolejnosci
-        val runda1 = listOf(Gest.PRAWO, Gest.LEWO, Gest.GORA, Gest.DOL)
+        val runda1 = listOf(Gest.RIGHT, Gest.LEFT, Gest.UP, Gest.DOWN)
         var runda2 = runda1.shuffled()
         repeat(50) {
             if (runda2.first() != runda1.last() && runda2 != runda1) return@repeat
@@ -122,7 +108,6 @@ class TutorialActivity : AppCompatActivity() {
         }
         val faza1 = runda1.map { Krok(1, it, runda = 1) } + runda2.map { Krok(1, it, runda = 2) }
 
-        // faza 2: kazdy akord 2x, losowo, bez dwoch takich samych pod rzad
         var losowe = (Gest.values().toList() + Gest.values().toList()).shuffled()
         repeat(50) {
             if (losowe.zipWithNext().none { (a, b) -> a == b }) return@repeat
@@ -130,7 +115,7 @@ class TutorialActivity : AppCompatActivity() {
         }
         val faza2 = losowe.map { Krok(2, it) }
 
-        val faza3 = listOf(Gest.LEWO, Gest.PRAWO, Gest.GORA, Gest.DOL).map { Krok(3, it) }   // C G a F
+        val faza3 = listOf(Gest.LEFT, Gest.RIGHT, Gest.UP, Gest.DOWN).map { Krok(3, it) }   // C G a F
         return faza1 + faza2 + faza3
     }
 
@@ -224,14 +209,12 @@ class TutorialActivity : AppCompatActivity() {
         else -> "Faza 3/3 · Progresja"
     }
 
-    // ------------------------------------------------------------------ reakcje na gesty
 
     private fun onGest(gest: Gest) {
-        // kazdy ruch zawsze gra swoj akord - uzytkownik slyszy, co zrobil
         akordy.play(gest.akord)
 
         if (koniec) {
-            if (gest == Gest.PRAWO) {              // ekran koncowy: glowa w prawo = "klika" Powtorz samouczek
+            if (gest == Gest.RIGHT) {
                 btnPowtorz.isPressed = true
                 handler.postDelayed({ btnPowtorz.isPressed = false; btnPowtorz.performClick() }, 250)
             }
@@ -285,7 +268,6 @@ class TutorialActivity : AppCompatActivity() {
         btnPowtorz.visibility = View.VISIBLE
     }
 
-    // ------------------------------------------------------------------ wyglad
 
     private fun feedback(tekst: String, kolor: Int) {
         tvFeedback.text = tekst

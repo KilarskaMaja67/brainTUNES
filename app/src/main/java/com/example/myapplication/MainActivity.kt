@@ -3,16 +3,15 @@ package com.example.myapplication
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 
 class MainActivity : AppCompatActivity() {
 
-    //ktory przycisk zaznaczony (0 = config, 1 = tutorial, 2 = play, 3 = song)
+    //which button is selected (0 = config, 1 = tutorial, 2 = play, 3 = song)
     private var selected_index = 0
 
-    //lista z 4 przyciskami z XML
+    //lista with 4 buttons from XML
     private lateinit var list_buttons: List<Button>
 
 
@@ -20,8 +19,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        //POLACZENIE Z OPASKA - uruchamia sie raz na cala aplikacje
-        // emulator: "10.0.2.2"; prawdziwy telefon: IP laptopa z `ipconfig`
+        //CONNECTION TO THE WEARABLE - initialized once for the entire application
+        // emulator: "10.0.2.2"; real phone: laptop's IP address (from `ipconfig`)
         AppControler.start(laptopIp = "10.0.2.2")
 
 
@@ -32,7 +31,7 @@ class MainActivity : AppCompatActivity() {
 
         list_buttons = listOf(configBtn, tutorialBtn, playBtn, songBtn)
 
-        // OBSŁUGA KLIKNIĘCIA PALCEM (działa teraz i jako plan awaryjny)
+        // FINGER-TAP HANDLING (works now and also serves as a fallback)
         configBtn.setOnClickListener {
             selected_index = 0
             updateLook()
@@ -60,38 +59,36 @@ class MainActivity : AppCompatActivity() {
         updateLook()
     }
 
-    // zeby appcontroler decydowalo co sie dzieje (gora/dol na tym ekranie nic nie robia)
+    // so that the app controller decides what happens
     override fun onResume() {
         super.onResume()
         AppControler.ustawAkcje(
-            gora = { upMove() },
-            dol = { downMove() },
-            prawo = { rightMove() },
-            lewo = null,
-            mrugniecie = null
+            up = { upMove() },
+            down = { downMove() },
+            right = { rightMove() },
+            left = null,
+            blink = null
         )
     }
 
-    // powieksz przycisk
+    // change how picked button looks
     private fun updateLook() {
-        list_buttons.forEachIndexed { indeks, przycisk ->
-            if (indeks == selected_index) {
-                przycisk.scaleX = 1.15f // Powiększenie w poziomie o 15%
-                przycisk.scaleY = 1.15f // Powiększenie w pionie o 15%
-                przycisk.alpha = 1.0f   // Pełna widoczność
+        list_buttons.forEachIndexed { index, button ->
+            if (index == selected_index) {
+                button.scaleX = 1.15f
+                button.scaleY = 1.15f
+                button.alpha = 1.0f
             } else {
-                przycisk.scaleX = 1.0f  // Normalny rozmiar
-                przycisk.scaleY = 1.0f
-                przycisk.alpha = 0.6f   // Lekko przyciemniony
+                button.scaleX = 1.0f
+                button.scaleY = 1.0f
+                button.alpha = 0.6f
             }
         }
     }
 
-    // pod opaske
 
     private fun upMove() {
         runOnUiThread {
-            // Jeśli jesteś na samej górze (0), przeskakuje na ostatni przycisk na dole
             selected_index = if (selected_index - 1 < 0) list_buttons.size - 1 else selected_index - 1
             updateLook()
         }
@@ -99,7 +96,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun downMove() {
         runOnUiThread {
-            // Przesuwa zaznaczenie w dół, a po ostatnim przycisku wraca na górę (0)
             selected_index = (selected_index + 1) % list_buttons.size
             updateLook()
         }

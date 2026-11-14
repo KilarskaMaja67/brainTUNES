@@ -19,7 +19,7 @@ class ConfigActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         AppControler.ustawAkcje(
-            gora = { finish() },          // glowa w gore = powrot
+            up = { finish() },          // glowa w gore = powrot
         )
     }
 }

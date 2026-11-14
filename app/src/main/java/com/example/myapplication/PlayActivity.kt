@@ -66,11 +66,11 @@ class PlayActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         AppControler.ustawAkcje(
-            lewo = { CdurBtn.performClick() },    // C
-            prawo = { GdurBtn.performClick() },   // G
-            gora = { AmolBtn.performClick() },    // a-moll
-            dol = { FdurBtn.performClick() },     // F
-            mrugniecie = { blink_to_exit() },     // mocne mrugniecie = powrot do menu
+            left = { CdurBtn.performClick() },    // C
+            right = { GdurBtn.performClick() },   // G
+            up = { AmolBtn.performClick() },    // a-moll
+            down = { FdurBtn.performClick() },     // F
+            blink = { blink_to_exit() },     // mocne mrugniecie = powrot do menu
         )
     }
 

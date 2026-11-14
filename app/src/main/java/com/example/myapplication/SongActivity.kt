@@ -49,7 +49,7 @@ class SongActivity : AppCompatActivity() {
 
     private fun open_song(song_number: Int) {
         val intent = Intent(this, SongPlayActivity::class.java)
-        intent.putExtra("NUMER_PIOSENKI", song_number)
+        intent.putExtra("NUMBER OF SONG", song_number)
         startActivity(intent)
     }
 
@@ -59,11 +59,11 @@ class SongActivity : AppCompatActivity() {
         exitHintText.text = "blink twice to exit"
 
         AppControler.ustawAkcje(
-            gora = { move_up() },
-            dol = { move_down() },
-            prawo = { select_button() },
-            lewo = null,
-            mrugniecie = { blink_to_exit() }
+            up = { move_up() },
+            down = { move_down() },
+            right = { select_button() },
+            left = null,
+            blink = { blink_to_exit() }
         )
     }
 

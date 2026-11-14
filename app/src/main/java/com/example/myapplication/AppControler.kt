@@ -15,27 +15,27 @@ import kotlinx.coroutines.launch
 object AppControler {
 
     // akcje aktualnego ekranu (ustawiane TYLKO przez ustawAkcje)
-    private var lewo: (() -> Unit)? = null
-    private var prawo: (() -> Unit)? = null
-    private var gora: (() -> Unit)? = null
-    private var dol: (() -> Unit)? = null
-    private var mrugniecie: (() -> Unit)? = null
+    private var left: (() -> Unit)? = null
+    private var right: (() -> Unit)? = null
+    private var up: (() -> Unit)? = null
+    private var down: (() -> Unit)? = null
+    private var blink: (() -> Unit)? = null
 
     // opcjonalnie: ekran kalibracji moze pokazywac kroki ("BLINK1 1/5", "HEAD_L 2/3", "DONE"...)
     var naKrokKalibracji: ((String) -> Unit)? = null
 
     fun ustawAkcje(
-        lewo: (() -> Unit)? = null,
-        prawo: (() -> Unit)? = null,
-        gora: (() -> Unit)? = null,
-        dol: (() -> Unit)? = null,
-        mrugniecie: (() -> Unit)? = null,
+        left: (() -> Unit)? = null,
+        right: (() -> Unit)? = null,
+        up: (() -> Unit)? = null,
+        down: (() -> Unit)? = null,
+        blink: (() -> Unit)? = null,
     ) {
-        this.lewo = lewo
-        this.prawo = prawo
-        this.gora = gora
-        this.dol = dol
-        this.mrugniecie = mrugniecie
+        this.left = left
+        this.right = right
+        this.up = up
+        this.down = down
+        this.blink = blink
     }
 
     // ---------- polaczenie z opaska (laptop z Pythonem) ----------
@@ -52,11 +52,11 @@ object AppControler {
             receiver.events.collect { event ->
                 when (event) {
                     is EegEvent.Command -> when (event.command) {
-                        EegCommand.LEFT -> lewo?.invoke()
-                        EegCommand.RIGHT -> prawo?.invoke()
-                        EegCommand.UP -> gora?.invoke()
-                        EegCommand.DOWN -> dol?.invoke()
-                        EegCommand.DOUBLE_BLINK, EegCommand.BLINK -> mrugniecie?.invoke()
+                        EegCommand.LEFT -> left?.invoke()
+                        EegCommand.RIGHT -> right?.invoke()
+                        EegCommand.UP -> up?.invoke()
+                        EegCommand.DOWN -> down?.invoke()
+                        EegCommand.DOUBLE_BLINK, EegCommand.BLINK -> blink?.invoke()
                     }
                     is EegEvent.Calibration -> naKrokKalibracji?.invoke(event.step)
                     is EegEvent.Unknown -> { /* ignorujemy */ }
