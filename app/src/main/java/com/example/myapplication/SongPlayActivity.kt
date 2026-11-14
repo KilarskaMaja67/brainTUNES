@@ -66,23 +66,23 @@ class SongPlayActivity : AppCompatActivity() {
         zaladujPiosenke(numerPiosenki)
 
         CdurBtn.setOnClickListener {
-            CdurBtn.animujKlik()
-            akordy.graj(Akordy.Akord.C)
+            CdurBtn.animation_click()
+            akordy.play(Akordy.Akord.C)
         }
 
         GdurBtn.setOnClickListener {
-            GdurBtn.animujKlik()
-            akordy.graj(Akordy.Akord.G)
+            GdurBtn.animation_click()
+            akordy.play(Akordy.Akord.G)
         }
 
         AmolBtn.setOnClickListener {
-            AmolBtn.animujKlik()
-            akordy.graj(Akordy.Akord.AM)
+            AmolBtn.animation_click()
+            akordy.play(Akordy.Akord.AM)
         }
 
         FdurBtn.setOnClickListener {
-            FdurBtn.animujKlik()
-            akordy.graj(Akordy.Akord.F)
+            FdurBtn.animation_click()
+            akordy.play(Akordy.Akord.F)
         }
 
         backBtn.setOnClickListener {
