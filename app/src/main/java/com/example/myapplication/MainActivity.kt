@@ -2,22 +2,12 @@ package com.example.myapplication
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 import android.widget.Toast
-import android.view.View
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.launch
-import com.example.myapplication.eeg.EegCommand
-import com.example.myapplication.eeg.EegEvent
-import com.example.myapplication.eeg.EegReceiver
-
+import androidx.appcompat.app.AppCompatActivity
 
 
 class MainActivity : AppCompatActivity() {
-
 
     //ktory przycisk zaznaczony (0 = config, 1 = tutorial, 2 = play, 3 = song)
     private var selected_index = 0
@@ -40,39 +30,34 @@ class MainActivity : AppCompatActivity() {
         val playBtn = findViewById<Button>(R.id.playBtn)
         val songBtn = findViewById<Button>(R.id.songBtn)
 
-        // songBtn dodany do listy - inaczej opaska nie mogla go wybrac
         list_buttons = listOf(configBtn, tutorialBtn, playBtn, songBtn)
 
-        // 3. OBSŁUGA KLIKNIĘCIA PALCEM (działa teraz i jako plan awaryjny)
+        // OBSŁUGA KLIKNIĘCIA PALCEM (działa teraz i jako plan awaryjny)
         configBtn.setOnClickListener {
             selected_index = 0
             update_look()
             Toast.makeText(this, "selected: config", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, ConfigActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, ConfigActivity::class.java))
         }
 
         tutorialBtn.setOnClickListener {
             selected_index = 1
             update_look()
             Toast.makeText(this, "selected: tutorial", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, TutorialActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, TutorialActivity::class.java))
         }
 
         playBtn.setOnClickListener {
             selected_index = 2
             update_look()
             Toast.makeText(this, "selected: play", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, PlayActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, PlayActivity::class.java))
         }
 
-        songBtn.setOnClickListener{
+        songBtn.setOnClickListener {
             selected_index = 3
             update_look()
-            val intent = Intent(this, SongActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, SongActivity::class.java))
         }
 
         update_look()
@@ -88,7 +73,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    // powieksz przycisc
+    // powieksz przycisk
     private fun update_look() {
         list_buttons.forEachIndexed { indeks, przycisk ->
             if (indeks == selected_index) {
@@ -111,11 +96,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun left() {
-        selected_index = if (selected_index - 1 < 0) {
-            list_buttons.size - 1
-        } else {
-            selected_index - 1
-        }
+        selected_index = if (selected_index - 1 < 0) list_buttons.size - 1 else selected_index - 1
         update_look()
     }
 
