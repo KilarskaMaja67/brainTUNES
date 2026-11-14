@@ -36,21 +36,18 @@ class MainActivity : AppCompatActivity() {
         configBtn.setOnClickListener {
             selected_index = 0
             updateLook()
-            Toast.makeText(this, "selected: config", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, ConfigActivity::class.java))
         }
 
         tutorialBtn.setOnClickListener {
             selected_index = 1
             updateLook()
-            Toast.makeText(this, "selected: tutorial", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, TutorialActivity::class.java))
         }
 
         playBtn.setOnClickListener {
             selected_index = 2
             updateLook()
-            Toast.makeText(this, "selected: play", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, PlayActivity::class.java))
         }
 
