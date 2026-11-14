@@ -8,36 +8,34 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
+/**
+ * Laczy opaske (komendy z Pythona) z aktualnym ekranem.
+ * Kazdy ekran w onResume() woła ustawAkcje(...) - to, czego nie poda, nic nie robi.
+ */
 object AppControler {
 
-    var akcjaNaLewo: (() -> Unit)? = null
-    var akcjaNaPrawo: (() -> Unit)? = null
-    var akcjaNaGore: (() -> Unit)? = null
-    var akcjaNaDol: (() -> Unit)? = null
-    var akcjaNaMrugniecie: (() -> Unit)? = null
-    var akcjaNaSzczeke: (() -> Unit)? = null
+    // akcje aktualnego ekranu (ustawiane TYLKO przez ustawAkcje)
+    private var lewo: (() -> Unit)? = null
+    private var prawo: (() -> Unit)? = null
+    private var gora: (() -> Unit)? = null
+    private var dol: (() -> Unit)? = null
+    private var mrugniecie: (() -> Unit)? = null
 
-    // opcjonalnie: ekran kalibracji moze pokazywac kroki ("BLINK2 1/5", "HEAD_L 2/3", "DONE"...)
+    // opcjonalnie: ekran kalibracji moze pokazywac kroki ("BLINK1 1/5", "HEAD_L 2/3", "DONE"...)
     var naKrokKalibracji: ((String) -> Unit)? = null
 
-    /**
-     * Ustawia WSZYSTKIE akcje naraz - to, czego nie podasz, bedzie wylaczone (null).
-     * Wolaj w onResume() KAZDEGO ekranu, zeby nie zostaly akcje z poprzedniego ekranu.
-     */
     fun ustawAkcje(
         lewo: (() -> Unit)? = null,
         prawo: (() -> Unit)? = null,
         gora: (() -> Unit)? = null,
         dol: (() -> Unit)? = null,
         mrugniecie: (() -> Unit)? = null,
-        szczeka: (() -> Unit)? = null,
     ) {
-        akcjaNaLewo = lewo
-        akcjaNaPrawo = prawo
-        akcjaNaGore = gora
-        akcjaNaDol = dol
-        akcjaNaMrugniecie = mrugniecie
-        akcjaNaSzczeke = szczeka
+        this.lewo = lewo
+        this.prawo = prawo
+        this.gora = gora
+        this.dol = dol
+        this.mrugniecie = mrugniecie
     }
 
     // ---------- polaczenie z opaska (laptop z Pythonem) ----------
@@ -54,11 +52,11 @@ object AppControler {
             receiver.events.collect { event ->
                 when (event) {
                     is EegEvent.Command -> when (event.command) {
-                        EegCommand.LEFT -> wykrytoRuchWLewo()
-                        EegCommand.RIGHT -> wykrytoRuchWPrawo()
-                        EegCommand.UP -> wykrytoRuchWGore()
-                        EegCommand.DOWN -> wykrytoRuchWDol()
-                        EegCommand.DOUBLE_BLINK, EegCommand.BLINK -> wykrytoMrugniecie()
+                        EegCommand.LEFT -> lewo?.invoke()
+                        EegCommand.RIGHT -> prawo?.invoke()
+                        EegCommand.UP -> gora?.invoke()
+                        EegCommand.DOWN -> dol?.invoke()
+                        EegCommand.DOUBLE_BLINK, EegCommand.BLINK -> mrugniecie?.invoke()
                     }
                     is EegEvent.Calibration -> naKrokKalibracji?.invoke(event.step)
                     is EegEvent.Unknown -> { /* ignorujemy */ }
@@ -78,32 +76,5 @@ object AppControler {
     fun stop() {
         eeg?.stop()
         eeg = null
-    }
-
-
-    // jak wykryto ruch
-    fun wykrytoRuchWLewo() {
-        akcjaNaLewo?.invoke()
-    }
-
-    fun wykrytoRuchWPrawo() {
-        akcjaNaPrawo?.invoke()
-    }
-
-    fun wykrytoRuchWGore() {
-        akcjaNaGore?.invoke()
-    }
-
-    fun wykrytoRuchWDol() {
-        akcjaNaDol?.invoke()
-    }
-
-
-    fun wykrytoMrugniecie() {
-        akcjaNaMrugniecie?.invoke()
-    }
-
-    fun wykrytoSzczeke() {
-        akcjaNaSzczeke?.invoke()
     }
 }

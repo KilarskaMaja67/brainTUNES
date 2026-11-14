@@ -1,8 +1,6 @@
 package com.example.myapplication
 
-import android.media.AudioAttributes
 import android.media.MediaPlayer
-import android.media.SoundPool
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +14,9 @@ data class LinijkaPiosenki(
     val akordPodpowiedz: String
 )
 
+// sterowanie jak w PlayActivity:
+//   glowa w lewo = C, glowa w prawo = G, glowa w gore = a-moll, glowa w dol = F, mocne mrugniecie = powrot
+
 class SongPlayActivity : AppCompatActivity() {
 
     private lateinit var CdurBtn: Button
@@ -25,13 +26,10 @@ class SongPlayActivity : AppCompatActivity() {
     private lateinit var chordHintText: TextView
     private lateinit var lyricsText: TextView
 
-    private lateinit var soundPool: SoundPool
-    private var soundC = 0
-    private var soundG = 0
-    private var soundAm = 0
-    private var soundF = 0
+    private lateinit var akordy: Akordy
 
     private var mediaPlayer: MediaPlayer? = null
+    private var wstrzymanaPrzezPauze = false
     private val handler = Handler(Looper.getMainLooper())
     private var aktualnyScenariusz: List<LinijkaPiosenki> = emptyList()
 
@@ -54,20 +52,7 @@ class SongPlayActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_song_play)
 
-        val audioAttributes = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_GAME)
-            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-            .build()
-
-        soundPool = SoundPool.Builder()
-            .setMaxStreams(4)
-            .setAudioAttributes(audioAttributes)
-            .build()
-
-        soundC = soundPool.load(this, R.raw.akord_c, 1)
-        soundG = soundPool.load(this, R.raw.akord_g, 1)
-        soundAm = soundPool.load(this, R.raw.akord_am, 1)
-        soundF = soundPool.load(this, R.raw.akord_f, 1)
+        akordy = Akordy(this)
 
         chordHintText = findViewById(R.id.chordHintText)
         lyricsText = findViewById(R.id.lyricsText)
@@ -81,23 +66,23 @@ class SongPlayActivity : AppCompatActivity() {
         zaladujPiosenke(numerPiosenki)
 
         CdurBtn.setOnClickListener {
-            changeLooks(CdurBtn)
-            playSound(soundC)
+            CdurBtn.animujKlik()
+            akordy.graj(Akordy.Akord.C)
         }
 
         GdurBtn.setOnClickListener {
-            changeLooks(GdurBtn)
-            playSound(soundG)
+            GdurBtn.animujKlik()
+            akordy.graj(Akordy.Akord.G)
         }
 
         AmolBtn.setOnClickListener {
-            changeLooks(AmolBtn)
-            playSound(soundAm)
+            AmolBtn.animujKlik()
+            akordy.graj(Akordy.Akord.AM)
         }
 
         FdurBtn.setOnClickListener {
-            changeLooks(FdurBtn)
-            playSound(soundF)
+            FdurBtn.animujKlik()
+            akordy.graj(Akordy.Akord.F)
         }
 
         backBtn.setOnClickListener {
@@ -106,10 +91,10 @@ class SongPlayActivity : AppCompatActivity() {
     }
 
     private fun zaladujPiosenke(numer: Int) {
-        val (plikAudioId, plikLrcId) = if (numer == 1) {
-            R.raw.zawsze_tam_gdzie_ty_m to R.raw.zawsze_tam_gdzie_ty
-        } else {
-            R.raw.zawsze_tam_gdzie_ty_m to R.raw.zawsze_tam_gdzie_ty
+        // TODO: inne piosenki - na razie kazdy numer gra te sama
+        val (plikAudioId, plikLrcId) = when (numer) {
+            1 -> R.raw.zawsze_tam_gdzie_ty_m to R.raw.zawsze_tam_gdzie_ty
+            else -> R.raw.zawsze_tam_gdzie_ty_m to R.raw.zawsze_tam_gdzie_ty
         }
 
         aktualnyScenariusz = wczytajPlikLrc(plikLrcId)
@@ -159,42 +144,34 @@ class SongPlayActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        AppControler.akcjaNaLewo = { playLeft() }
-        AppControler.akcjaNaPrawo = { playRight() }
-        AppControler.akcjaNaMrugniecie = { playBlink() }
-        AppControler.akcjaNaSzczeke = { playClutch() }
+        AppControler.ustawAkcje(
+            lewo = { CdurBtn.performClick() },    // C
+            prawo = { GdurBtn.performClick() },   // G
+            gora = { AmolBtn.performClick() },    // a-moll
+            dol = { FdurBtn.performClick() },     // F
+            mrugniecie = { finish() },            // mocne mrugniecie = powrot
+        )
+        // wznow muzyke, jesli zatrzymalismy ja przy wyjsciu z ekranu
+        if (wstrzymanaPrzezPauze) {
+            mediaPlayer?.start()
+            wstrzymanaPrzezPauze = false
+        }
     }
 
-    private fun playSound(idDzwieku: Int) {
-        soundPool.play(idDzwieku, 1.0f, 1.0f, 1, 0, 1.0f)
+    override fun onPause() {
+        super.onPause()
+        // zatrzymaj muzyke, gdy ekran znika (np. przycisk Home) - inaczej grala by w tle
+        if (mediaPlayer?.isPlaying == true) {
+            mediaPlayer?.pause()
+            wstrzymanaPrzezPauze = true
+        }
     }
-
-    private fun changeLooks(przycisk: Button) {
-        przycisk.animate()
-            .scaleX(1.08f)
-            .scaleY(1.08f)
-            .setDuration(100)
-            .withEndAction {
-                przycisk.animate()
-                    .scaleX(1.0f)
-                    .scaleY(1.0f)
-                    .setDuration(100)
-                    .start()
-            }
-            .start()
-    }
-
-    fun playLeft() = runOnUiThread { CdurBtn.performClick() }
-    fun playRight() = runOnUiThread { GdurBtn.performClick() }
-    fun playBlink() = runOnUiThread { AmolBtn.performClick() }
-    fun playClutch() = runOnUiThread { FdurBtn.performClick() }
 
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(sprawdzCzasRunnable)
-        mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
-        soundPool.release()
+        akordy.zwolnij()
     }
 }
