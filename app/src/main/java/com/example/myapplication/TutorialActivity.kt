@@ -12,11 +12,10 @@ import androidx.appcompat.app.AppCompatActivity
 
 /**
  * SAMOUCZEK - uczy gestow opaski w 3 fazach:
- *   1. Poznaj ruchy      - "Przechyl glowe w PRAWO, aby zagrac G" (+ duza strzalka),
- *                          na koncu "Mrugnij mocno" (= powrot)
+ *   1. Poznaj ruchy      - "Przechyl glowe w PRAWO, aby zagrac G" (+ duza strzalka), 2 rundy
  *   2. Bez podpowiedzi   - "Zagraj a-moll" (kazdy akord 2x, losowo; po 2 pomylkach pojawia sie podpowiedz)
  *   3. Progresja         - C -> G -> a-moll -> F po kolei
- * Na koniec: wynik + "Jeszcze raz" / mocne mrugniecie = powrot do menu.
+ * Na koniec: wynik + "Jeszcze raz". Dwa mocne mrugniecia w kazdej chwili = powrot do menu.
  * Bez przyciskow akordow - tylko gesty (test bez opaski: symulator_komend.py).
  */
 class TutorialActivity : AppCompatActivity() {
@@ -29,8 +28,8 @@ class TutorialActivity : AppCompatActivity() {
         DOL(Akordy.Akord.F, "F", "Pochyl głowę w DÓŁ", "⬇"),
     }
 
-    /** Jeden krok samouczka. gest == null oznacza krok "mocne mrugniecie". */
-    private data class Krok(val faza: Int, val gest: Gest?)
+    /** Jeden krok samouczka: faza, runda w fazie i jakiego ruchu glowy oczekujemy. */
+    private data class Krok(val faza: Int, val gest: Gest, val runda: Int = 1)
 
     private lateinit var tvFaza: TextView
     private lateinit var pasek: ProgressBar
@@ -39,6 +38,7 @@ class TutorialActivity : AppCompatActivity() {
     private lateinit var tvPodpowiedz: TextView
     private lateinit var tvFeedback: TextView
     private lateinit var btnJeszczeRaz: Button
+    private lateinit var exitHintText: TextView
 
     private lateinit var akordy: Akordy
     private val handler = Handler(Looper.getMainLooper())
@@ -49,7 +49,15 @@ class TutorialActivity : AppCompatActivity() {
     private var koniec = false
     private var bledy = 0
     private var bledyWKroku = 0
-    private var ostatnieMrugniecieMs = 0L
+
+
+    private val CZAS_NA_DRUGIE_MRUGNIECIE_MS = 4000L   // Python ignoruje mrugniecia przez ~1.2 s po komendzie,
+    // wiec drugie mrugniecie musi miec czas: 1.2-4 s po pierwszym
+    private var blink_counter = 0
+    private val reset_blinks_Runnable = Runnable {
+        blink_counter = 0
+        exitHintText.text = "blink twice to exit"
+    }
 
     private val ZIELONY = Color.rgb(46, 125, 50)
     private val CZERWONY = Color.rgb(198, 40, 40)
@@ -66,6 +74,8 @@ class TutorialActivity : AppCompatActivity() {
         tvPodpowiedz = findViewById(R.id.tvPodpowiedz)
         tvFeedback = findViewById(R.id.tvFeedback)
         btnJeszczeRaz = findViewById(R.id.btnJeszczeRaz)
+        exitHintText = findViewById(R.id.exitHintText)
+        exitHintText.text = "blink twice to exit"
 
         findViewById<Button>(R.id.backBtn).setOnClickListener { finish() }
         btnJeszczeRaz.setOnClickListener { start() }
@@ -81,10 +91,22 @@ class TutorialActivity : AppCompatActivity() {
             prawo = { onGest(Gest.PRAWO) },
             gora = { onGest(Gest.GORA) },
             dol = { onGest(Gest.DOL) },
-            mrugniecie = { onMrugniecie() },
+            mrugniecie = { blink_to_exit() },            // mocne mrugniecie = powrot do menu (jak na innych ekranach)
         )
     }
 
+    // (runOnUiThread niepotrzebne - AppControler wywoluje akcje juz na watku UI)
+    private fun blink_to_exit() {
+        blink_counter++
+        handler.removeCallbacks(reset_blinks_Runnable)
+
+        if (blink_counter == 1) {
+            exitHintText.text = "to exit, blink once more"
+            handler.postDelayed(reset_blinks_Runnable, CZAS_NA_DRUGIE_MRUGNIECIE_MS)
+        } else if (blink_counter >= 2) {
+            finish()
+        }
+    }
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
@@ -94,7 +116,14 @@ class TutorialActivity : AppCompatActivity() {
     // ------------------------------------------------------------------ przebieg
 
     private fun zbudujKroki(): List<Krok> {
-        val faza1 = listOf(Gest.PRAWO, Gest.LEWO, Gest.GORA, Gest.DOL).map { Krok(1, it) } + Krok(1, null)
+        // faza 1: dwie rundy z podpowiedziami - najpierw po kolei, potem w innej kolejnosci
+        val runda1 = listOf(Gest.PRAWO, Gest.LEWO, Gest.GORA, Gest.DOL)
+        var runda2 = runda1.shuffled()
+        repeat(50) {
+            if (runda2.first() != runda1.last() && runda2 != runda1) return@repeat
+            runda2 = runda1.shuffled()
+        }
+        val faza1 = runda1.map { Krok(1, it, runda = 1) } + runda2.map { Krok(1, it, runda = 2) }
 
         // faza 2: kazdy akord 2x, losowo, bez dwoch takich samych pod rzad
         var losowe = (Gest.values().toList() + Gest.values().toList()).shuffled()
@@ -110,6 +139,8 @@ class TutorialActivity : AppCompatActivity() {
 
     private fun start() {
         handler.removeCallbacksAndMessages(null)
+        blink_counter = 0
+        exitHintText.text = "blink twice to exit"
         kroki = zbudujKroki()
         indeks = 0
         bledy = 0
@@ -123,18 +154,29 @@ class TutorialActivity : AppCompatActivity() {
         czekam = true
         tvStrzalka.text = ""
         tvFeedback.text = ""
-        tvFaza.text = nazwaFazy(faza)
+        tvFaza.text = nazwaFazy(kroki.first { it.faza == faza })
         tvPolecenie.text = when (faza) {
             1 -> "Poznaj ruchy"
             2 -> "Teraz bez podpowiedzi!"
             else -> "Zagraj progresję"
         }
         tvPodpowiedz.text = when (faza) {
-            1 -> "Każdy ruch głowy gra inny akord.\nRób ruch i od razu wracaj do pozycji prostej."
+            1 -> "Każdy ruch głowy gra inny akord.\nRób ruch i od razu wracaj do pozycji prostej.\n\nDwa mocne mrugnięcia = powrót do menu."
             2 -> "Pokażę tylko nazwę akordu.\nPamiętasz, który ruch go gra?"
             else -> "C → G → a-moll → F\nNajpopularniejsza progresja w muzyce pop."
         }
         handler.postDelayed({ pokazKrok() }, 3000)
+    }
+
+    /** Krotki ekran miedzy rundami tej samej fazy. */
+    private fun pokazWstepRundy(krok: Krok) {
+        czekam = true
+        tvStrzalka.text = ""
+        tvFeedback.text = ""
+        tvFaza.text = nazwaFazy(krok)
+        tvPolecenie.text = "Runda ${krok.runda}"
+        tvPodpowiedz.text = "Jeszcze raz każdy ruch - tym razem w innej kolejności."
+        handler.postDelayed({ pokazKrok() }, 2000)
     }
 
     private fun pokazKrok() {
@@ -142,16 +184,10 @@ class TutorialActivity : AppCompatActivity() {
         czekam = false
         bledyWKroku = 0
         tvFeedback.text = ""
-        tvFaza.text = nazwaFazy(krok.faza)
+        tvFaza.text = nazwaFazy(krok)
         pasek.progress = indeks
 
         val gest = krok.gest
-        if (gest == null) {                         // krok z mrugnieciem
-            tvPolecenie.text = "Mrugnij MOCNO"
-            tvStrzalka.text = "👁"
-            tvPodpowiedz.text = "Mocne mrugnięcie = powrót.\nZwykłe mrugnięcia są ignorowane."
-            return
-        }
 
         when (krok.faza) {
             1 -> {
@@ -176,7 +212,7 @@ class TutorialActivity : AppCompatActivity() {
     private fun postepProgresji(): String {
         val start3 = kroki.indexOfFirst { it.faza == 3 }
         return kroki.drop(start3).mapIndexed { i, k ->
-            val nazwa = k.gest?.nazwa ?: ""
+            val nazwa = k.gest.nazwa
             when {
                 start3 + i < indeks -> "✓$nazwa"
                 start3 + i == indeks -> "[$nazwa]"
@@ -185,8 +221,8 @@ class TutorialActivity : AppCompatActivity() {
         }.joinToString("  →  ")
     }
 
-    private fun nazwaFazy(faza: Int) = when (faza) {
-        1 -> "Faza 1/3 · Poznaj ruchy"
+    private fun nazwaFazy(krok: Krok) = when (krok.faza) {
+        1 -> "Faza 1/3 · Poznaj ruchy · runda ${krok.runda}/2"
         2 -> "Faza 2/3 · Bez podpowiedzi"
         else -> "Faza 3/3 · Progresja"
     }
@@ -201,10 +237,6 @@ class TutorialActivity : AppCompatActivity() {
         val krok = kroki[indeks]
         val cel = krok.gest
 
-        if (cel == null) {
-            feedback("To był ruch głową. Teraz mrugnij mocno!", POMARANCZOWY)
-            return
-        }
         if (gest == cel) {
             sukces()
             return
@@ -222,34 +254,15 @@ class TutorialActivity : AppCompatActivity() {
         }
     }
 
-    private fun onMrugniecie() {
-        if (koniec) {
-            finish()
-            return
-        }
-        val krok = kroki[indeks]
-        if (!czekam && krok.gest == null) {         // to byl krok z mrugnieciem
-            sukces()
-            return
-        }
-        // w trakcie samouczka mrugniecie nie wyrzuca od razu - trzeba potwierdzic
-        val teraz = System.currentTimeMillis()
-        if (teraz - ostatnieMrugniecieMs < 3000) {
-            finish()
-            return
-        }
-        ostatnieMrugniecieMs = teraz
-        feedback("Mrugnięcie = wyjście. Mrugnij jeszcze raz w ciągu 3 s, aby wyjść.", POMARANCZOWY)
-    }
-
     private fun sukces() {
         czekam = true
-        feedback("Brawo! ✓  ${kroki[indeks].gest?.nazwa ?: ""}", ZIELONY)
+        feedback("Brawo! ✓  ${kroki[indeks].gest.nazwa}", ZIELONY)
         handler.postDelayed({
             indeks++
             when {
                 indeks >= kroki.size -> zakoncz()
                 kroki[indeks].faza != kroki[indeks - 1].faza -> pokazWstepFazy(kroki[indeks].faza)
+                kroki[indeks].runda != kroki[indeks - 1].runda -> pokazWstepRundy(kroki[indeks])
                 else -> pokazKrok()
             }
         }, 1200)
@@ -263,7 +276,7 @@ class TutorialActivity : AppCompatActivity() {
         tvFaza.text = "Gotowe!"
         tvPolecenie.text = "Samouczek ukończony 🎉"
         tvStrzalka.text = ""
-        tvPodpowiedz.text = "Trafność: $trafnosc%  (pomyłki: $bledy)\n\nMrugnij mocno, aby wrócić do menu."
+        tvPodpowiedz.text = "Trafność: $trafnosc%  (pomyłki: $bledy)\n\nMrugnij mocno 2×, aby wrócić do menu."
         feedback("", ZIELONY)
         btnJeszczeRaz.visibility = View.VISIBLE
     }
