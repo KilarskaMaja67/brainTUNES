@@ -1,52 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- FREE PLAY: logo, title, chord cross. The played chord gets a ring in its own colour. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- outer frame: keeps the screen below the status bar / above the nav bar (fitsSystemWindows),
+     inner LinearLayout keeps its own padding -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main"
-    style="@style/BrainScreen"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:paddingTop="24dp"
-    android:paddingBottom="20dp">
+    android:background="@color/brain_cream"
+    android:fitsSystemWindows="true">
 
-    <ImageView
-        android:id="@+id/logoImage"
-        style="@style/BrainArtSlot"
-        android:layout_width="140dp"
-        android:layout_height="110dp"
-        android:contentDescription="Logo" />
-
-    <TextView
-        style="@style/BrainTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:text="Free play" />
-
-    <TextView
-        style="@style/BrainSub"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Move your head to play a chord" />
-
-    <Space
+    <LinearLayout
+        android:background="@color/brain_cream"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingTop="24dp"
+        android:paddingBottom="20dp">
 
-    <include layout="@layout/chord_cross" />
+        <ImageView
+            android:id="@+id/logoImage"
+            android:src="@drawable/logo_braintune"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:layout_width="wrap_content"
+            android:layout_height="130dp"
+            android:contentDescription="brainTUNE" />
 
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1.4" />
+        <TextView
+            style="@style/BrainTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Free play" />
 
-    <TextView
-        android:id="@+id/exitHintText"
-        style="@style/BrainHint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="blink twice to exit" />
-</LinearLayout>
+        <TextView
+            style="@style/BrainSub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Move your head to play a chord" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <include layout="@layout/chord_cross" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1.4" />
+
+        <TextView
+            android:id="@+id/exitHintText"
+            style="@style/BrainHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="blink twice to exit" />
+    </LinearLayout>
+</FrameLayout>

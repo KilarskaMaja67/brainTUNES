@@ -1,156 +1,177 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- MENU: logo on top, connection pill, 4 tiles with a slot for a brain drawing next to each (alternating sides). -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- MENU: logo, connection pill, 4 smaller buttons, each with its own brain drawing (alternating sides). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main"
-    style="@style/BrainScreen"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:paddingStart="28dp"
-    android:paddingTop="24dp"
-    android:paddingEnd="28dp"
-    android:paddingBottom="20dp">
+    android:background="@color/brain_cream"
+    android:fitsSystemWindows="true">
 
-    <!-- LOGO: add android:src="@drawable/logo" and remove the style line -->
-    <ImageView
-        android:id="@+id/logoImage"
-        style="@style/BrainArtSlot"
-        android:layout_width="140dp"
-        android:layout_height="110dp"
-        android:contentDescription="Logo" />
-
-    <TextView
-        android:id="@+id/tvConnection"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:background="@drawable/bg_pill_warn"
-        android:paddingStart="14dp"
-        android:paddingTop="6dp"
-        android:paddingEnd="14dp"
-        android:paddingBottom="6dp"
-        android:text="● Waiting for the headband…"
-        android:textColor="@color/brain_orange"
-        android:textSize="13sp"
-        android:textStyle="bold" />
-
-    <!-- row 1: art | Calibrate -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="26dp"
+        android:layout_height="match_parent"
         android:clipChildren="false"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:clipToPadding="false"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="20dp">
 
+        <!-- LOGO -->
         <ImageView
-            android:id="@+id/brainConfig"
-            style="@style/BrainArtSlot"
-            android:layout_width="76dp"
-            android:layout_height="76dp"
-            android:layout_marginEnd="14dp"
-            android:contentDescription="Brain" />
+            android:id="@+id/logoImage"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginTop="8dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="brainTUNE"
+            android:scaleType="fitCenter"
+            android:src="@drawable/logo_braintune" />
 
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/configBtn"
-            style="@style/BrainTile"
-            android:layout_width="0dp"
-            android:layout_height="76dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_burgundy"
-            android:text="Calibrate" />
+        <TextView
+            android:id="@+id/tvConnection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/bg_pill_warn"
+            android:paddingStart="14dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="6dp"
+            android:text="● Waiting for the headband…"
+            android:textColor="@color/brain_orange"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipChildren="false"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/brainConfig"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_marginEnd="14dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="Brain"
+                android:scaleType="fitCenter"
+                android:src="@drawable/brain_config" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/configBtn"
+                style="@style/BrainTile"
+                android:layout_width="200dp"
+                android:layout_height="68dp"
+                android:background="@drawable/bg_tile_burgundy"
+                android:text="Calibrate"
+                android:textSize="22sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipChildren="false"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/tutorialBtn"
+                style="@style/BrainTile"
+                android:layout_width="200dp"
+                android:layout_height="68dp"
+                android:background="@drawable/bg_tile_teal"
+                android:text="Tutorial"
+                android:textSize="22sp" />
+
+            <ImageView
+                android:id="@+id/brainTutorial"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_marginStart="14dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="Brain"
+                android:scaleType="fitCenter"
+                android:src="@drawable/brain_tutorial" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipChildren="false"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/brainPlay"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_marginEnd="14dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="Brain"
+                android:scaleType="fitCenter"
+                android:src="@drawable/brain_music" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/playBtn"
+                style="@style/BrainTile"
+                android:layout_width="200dp"
+                android:layout_height="68dp"
+                android:background="@drawable/bg_tile_mauve"
+                android:text="Play"
+                android:textSize="22sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipChildren="false"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/songBtn"
+                style="@style/BrainTile"
+                android:layout_width="200dp"
+                android:layout_height="68dp"
+                android:background="@drawable/bg_tile_slate"
+                android:text="Karaoke"
+                android:textSize="22sp" />
+
+            <ImageView
+                android:id="@+id/brainSong"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_marginStart="14dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="Brain"
+                android:scaleType="fitCenter"
+                android:src="@drawable/brain_karaoke" />
+        </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            style="@style/BrainHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⬆ ⬇  move   ·   ➡  open" />
     </LinearLayout>
-
-    <!-- row 2: Tutorial | art -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:clipChildren="false"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/tutorialBtn"
-            style="@style/BrainTile"
-            android:layout_width="0dp"
-            android:layout_height="76dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_slate"
-            android:text="Tutorial" />
-
-        <ImageView
-            android:id="@+id/brainTutorial"
-            style="@style/BrainArtSlot"
-            android:layout_width="76dp"
-            android:layout_height="76dp"
-            android:layout_marginStart="14dp"
-            android:contentDescription="Brain" />
-    </LinearLayout>
-
-    <!-- row 3: art | Play -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:clipChildren="false"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:id="@+id/brainPlay"
-            style="@style/BrainArtSlot"
-            android:layout_width="76dp"
-            android:layout_height="76dp"
-            android:layout_marginEnd="14dp"
-            android:contentDescription="Brain" />
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/playBtn"
-            style="@style/BrainTile"
-            android:layout_width="0dp"
-            android:layout_height="76dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_mauve"
-            android:text="Play" />
-    </LinearLayout>
-
-    <!-- row 4: Songs | art -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:clipChildren="false"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/songBtn"
-            style="@style/BrainTile"
-            android:layout_width="0dp"
-            android:layout_height="76dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_tile_slate"
-            android:text="Songs" />
-
-        <ImageView
-            android:id="@+id/brainSong"
-            style="@style/BrainArtSlot"
-            android:layout_width="76dp"
-            android:layout_height="76dp"
-            android:layout_marginStart="14dp"
-            android:contentDescription="Brain" />
-    </LinearLayout>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <TextView
-        style="@style/BrainHint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="⬆ ⬇  move   ·   ➡  open" />
-</LinearLayout>
+</FrameLayout>

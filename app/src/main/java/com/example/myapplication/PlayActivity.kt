@@ -52,12 +52,6 @@ class PlayActivity : AppCompatActivity() {
             Akordy.Akord.F to findViewById<View>(R.id.ringF),
         )
 
-        // big chord letter + small gesture underneath
-        CdurBtn.setChordLabel("C", "⬅ left")
-        GdurBtn.setChordLabel("G", "right ➡")
-        AmolBtn.setChordLabel("a", "⬆ up")
-        FdurBtn.setChordLabel("F", "⬇ down")
-
         CdurBtn.setOnClickListener { play_chord(Akordy.Akord.C) }
         GdurBtn.setOnClickListener { play_chord(Akordy.Akord.G) }
         AmolBtn.setOnClickListener { play_chord(Akordy.Akord.AM) }
@@ -101,4 +95,4 @@ class PlayActivity : AppCompatActivity() {
         handler.removeCallbacks(reset_blinks_Runnable)
         akordy.free()
     }
-}
+}

@@ -1,65 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- SONG LIST: logo on top, plain song tiles (title only). -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- outer frame: keeps the screen below the status bar / above the nav bar (fitsSystemWindows),
+     inner LinearLayout keeps its own padding -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main"
-    style="@style/BrainScreen"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:paddingStart="28dp"
-    android:paddingTop="24dp"
-    android:paddingEnd="28dp"
-    android:paddingBottom="20dp">
+    android:background="@color/brain_cream"
+    android:fitsSystemWindows="true">
 
-    <ImageView
-        android:id="@+id/logoImage"
-        style="@style/BrainArtSlot"
-        android:layout_width="140dp"
-        android:layout_height="110dp"
-        android:contentDescription="Logo" />
-
-    <TextView
-        style="@style/BrainTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:text="Pick a song" />
-
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/song1Btn"
-        style="@style/BrainTile"
+    <LinearLayout
+        android:background="@color/brain_cream"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:layout_marginTop="26dp"
-        android:background="@drawable/bg_tile_burgundy"
-        android:text="Zawsze tam gdzie ty" />
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="28dp"
+        android:paddingTop="24dp"
+        android:paddingEnd="28dp"
+        android:paddingBottom="20dp">
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/song2Btn"
-        style="@style/BrainTile"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:layout_marginTop="18dp"
-        android:background="@drawable/bg_tile_slate"
-        android:text="When I'm Gone" />
+        <ImageView
+            android:id="@+id/logoImage"
+            android:src="@drawable/logo_braintune"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:layout_width="wrap_content"
+            android:layout_height="130dp"
+            android:contentDescription="brainTUNE" />
 
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        <TextView
+            style="@style/BrainTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Pick a song" />
 
-    <TextView
-        style="@style/BrainHint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="⬆ ⬇  move   ·   ➡  play" />
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
-    <TextView
-        android:id="@+id/exitHintText"
-        style="@style/BrainHint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="blink twice to exit" />
-</LinearLayout>
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/song1Btn"
+            style="@style/BrainTile"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginTop="0dp"
+            android:background="@drawable/bg_tile_burgundy"
+            android:text="Zawsze tam gdzie ty" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/song2Btn"
+            style="@style/BrainTile"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_tile_slate"
+            android:text="When I'm Gone" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/song3Btn"
+            style="@style/BrainTile"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_tile_mauve"
+            android:text="Stay With Me" />
+
+        <ImageView
+            android:id="@+id/brainSong"
+            android:layout_width="wrap_content"
+            android:layout_height="110dp"
+            android:layout_marginTop="20dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="Brain"
+            android:scaleType="fitCenter"
+            android:src="@drawable/brain_karaoke" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            style="@style/BrainHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⬆ ⬇  move   ·   ➡  play" />
+
+        <TextView
+            android:id="@+id/exitHintText"
+            style="@style/BrainHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="blink twice to exit" />
+    </LinearLayout>
+</FrameLayout>

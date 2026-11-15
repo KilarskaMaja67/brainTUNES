@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
 
         //CONNECTION TO THE WEARABLE - initialized once for the entire application
         // emulator: "10.0.2.2"; real phone: laptop's IP address (from `ipconfig`)
-        AppControler.start(laptopIp = "10.0.2.2")
+        AppControler.start(laptopIp = "10.183.103.159")
 
 
         val configBtn = findViewById<Button>(R.id.configBtn)
@@ -144,4 +144,4 @@ class MainActivity : AppCompatActivity() {
             list_buttons[selected_index].performClick()
         }
     }
-}
+}

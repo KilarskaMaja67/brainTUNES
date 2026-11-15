@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -18,7 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
  * Python measures and computes; this screen shows the instructions, beeps on each action,
  * rates the headband contact and shows the result. A new calibration overwrites the saved one.
  *
- * When finished:  ⬅ head left = Repeat,  ➡ head right = Done (or tap).
+ * When finished: head UP/DOWN = choose Repeat or Done, head RIGHT = press it (or tap).
  * A successful calibration returns to the menu automatically after 5 s.
  */
 class ConfigActivity : AppCompatActivity() {
@@ -26,6 +27,7 @@ class ConfigActivity : AppCompatActivity() {
     private lateinit var tvConnection: TextView
     private lateinit var segments: LinearLayout       // 18 small bars = progress
     private lateinit var tvArrow: TextView
+    private lateinit var ivGesture: ImageView          // brain picture in the card
     private lateinit var tvBottomHint: TextView
     private lateinit var checklistIcons: List<TextView>  // Sit still / Blink / Head moves
     private lateinit var tvInstruction: TextView
@@ -34,6 +36,8 @@ class ConfigActivity : AppCompatActivity() {
     private lateinit var tvResult: TextView
     private lateinit var btnRepeat: Button
     private lateinit var btnDone: Button
+    private lateinit var checklist: View
+    private var selectedButton = 1                  // 0 = Repeat, 1 = Done (chosen with head up/down)
 
     private val handler = Handler(Looper.getMainLooper())
     private var tone: ToneGenerator? = null
@@ -62,6 +66,7 @@ class ConfigActivity : AppCompatActivity() {
         tvConnection = findViewById(R.id.tvConnection)
         segments = findViewById(R.id.calibrationSegments)
         tvArrow = findViewById(R.id.tvArrow)
+        ivGesture = findViewById(R.id.ivGesture)
         tvBottomHint = findViewById(R.id.tvBottomHint)
         checklistIcons = listOf<TextView>(findViewById(R.id.iconRest), findViewById(R.id.iconBlink), findViewById(R.id.iconHead))
         tvInstruction = findViewById(R.id.tvInstruction)
@@ -70,6 +75,7 @@ class ConfigActivity : AppCompatActivity() {
         tvResult = findViewById(R.id.tvResult)
         btnRepeat = findViewById(R.id.btnRepeat)
         btnDone = findViewById(R.id.btnDone)
+        checklist = findViewById(R.id.checklist)
 
         buildSegments()
         btnRepeat.setOnClickListener { start() }
@@ -82,10 +88,11 @@ class ConfigActivity : AppCompatActivity() {
         super.onResume()
         AppControler.naKrokKalibracji = { onStep(it) }
         // Python sends no commands during calibration; afterwards: left = Repeat, right = Done
+        // Python sends no commands during calibration; afterwards: up/down = choose button, right = press it
         AppControler.ustawAkcje(
-            up = { finish() },          // head up = back
-            left = { if (finished) click(btnRepeat) },
-            right = { if (finished) click(btnDone) },
+            up = { if (finished) select(0) },
+            down = { if (finished) select(1) },
+            right = { if (finished) click(if (selectedButton == 0) btnRepeat else btnDone) },
         )
         if (!running && !finished) start()
     }
@@ -110,8 +117,10 @@ class ConfigActivity : AppCompatActivity() {
         lastStepMs = 0L
         btnRepeat.visibility = View.GONE
         btnDone.visibility = View.GONE
+        checklist.visibility = View.VISIBLE
         calProgress = 0
         stage = 0
+        ivGesture.setImageResource(R.drawable.brain_config)
         tvArrow.visibility = View.GONE
         tvBottomHint.text = "♪  Wait for the sound, then move"
         tvContact.visibility = View.GONE
@@ -122,6 +131,9 @@ class ConfigActivity : AppCompatActivity() {
         AppControler.kalibruj()
         handler.postDelayed(checkStarted, 5000)
     }
+
+    /** After a successful calibration: back to the menu after 5 s (cancelled by a head move). */
+    private val autoClose = Runnable { if (finished) finish() }
 
     /** If Python hasn't answered within 5 s - ask again and show a message. */
     private val checkStarted = object : Runnable {
@@ -163,10 +175,10 @@ class ConfigActivity : AppCompatActivity() {
             "WAIT" -> tvInstruction.text = "…rest"
             "BLINK1" -> { stage = 1; action("Blink HARD", "Blink $rest", 1 + nr) }
             "BLINK2" -> { stage = 1; action("Blink twice quickly", "Blink $rest", 1 + nr) }
-            "HEAD_L" -> { stage = 2; action("Head LEFT\nand back", "Move $rest", 6 + nr, "⬅") }
-            "HEAD_P" -> { stage = 2; action("Head RIGHT\nand back", "Move $rest", 9 + nr, "➡") }
-            "HEAD_GORA" -> { stage = 2; action("Head UP\nand back", "Move $rest", 12 + nr, "⬆") }
-            "HEAD_DOL" -> { stage = 2; action("Head DOWN\nand back", "Move $rest", 15 + nr, "⬇") }
+            "HEAD_L" -> { stage = 2; action("Head LEFT\nand back", "Move $rest", 6 + nr, R.drawable.brain_left) }
+            "HEAD_P" -> { stage = 2; action("Head RIGHT\nand back", "Move $rest", 9 + nr, R.drawable.brain_right) }
+            "HEAD_GORA" -> { stage = 2; action("Head UP\nand back", "Move $rest", 12 + nr, R.drawable.brain_up) }
+            "HEAD_DOL" -> { stage = 2; action("Head DOWN\nand back", "Move $rest", 15 + nr, R.drawable.brain_down) }
             "RESULT" -> showResult(rest)
             "DONE" -> end(success = true)
             "FAIL" -> end(success = false)
@@ -187,10 +199,12 @@ class ConfigActivity : AppCompatActivity() {
         if (success) stage = 3
         btnRepeat.visibility = View.VISIBLE
         btnDone.visibility = View.VISIBLE
-        tvBottomHint.text = "⬅  repeat   ·   ➡  done"
+        checklist.visibility = View.GONE
+        updateButtons(if (success) 1 else 0)            // success -> "Done" selected, failure -> "Repeat"
+        tvBottomHint.text = "⬆ ⬇  choose   ·   ➡  press"
         if (success) {
-            instruction("Calibration done!", "Returning to the menu in a moment…")
-            handler.postDelayed({ if (finished) finish() }, 5000)
+            instruction("Calibration done!", "Returning to the menu in a moment…", R.drawable.brain_music)
+            handler.postDelayed(autoClose, 5000)
         } else {
             instruction("Calibration failed", "Adjust the headband and repeat")
         }
@@ -198,16 +212,16 @@ class ConfigActivity : AppCompatActivity() {
 
     // ------------------------------------------------------------------ look
 
-    /** Big card: optional arrow + instruction + small text under it. */
-    private fun instruction(main: String, sub: String, arrow: String = "") {
+    /** Big card: brain picture + instruction + small text under it. Default picture = brain with the headband. */
+    private fun instruction(main: String, sub: String, image: Int = R.drawable.brain_config) {
         tvInstruction.text = main
         tvStep.text = sub
-        tvArrow.text = arrow
-        tvArrow.visibility = if (arrow.isEmpty()) View.GONE else View.VISIBLE
+        ivGesture.setImageResource(image)
+        tvArrow.visibility = View.GONE
     }
 
-    private fun action(main: String, sub: String, progress: Int, arrow: String = "") {
-        instruction(main, sub, arrow)
+    private fun action(main: String, sub: String, progress: Int, image: Int = R.drawable.brain_config) {
+        instruction(main, sub, image)
         calProgress = progress
         try { tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 150) } catch (_: Exception) { }
     }
@@ -247,6 +261,19 @@ class ConfigActivity : AppCompatActivity() {
                 else -> { icon.text = ""; icon.background = roundedBg(brainColor(R.color.brain_track), 9f) }
             }
         }
+    }
+
+    /** Head up/down: change the selected button. Stops the automatic return to the menu. */
+    private fun select(index: Int) {
+        handler.removeCallbacks(autoClose)
+        tvStep.text = ""
+        updateButtons(index)
+    }
+
+    private fun updateButtons(index: Int) {
+        selectedButton = index
+        btnRepeat.setSelectedLook(index == 0)
+        btnDone.setSelectedLook(index == 1)
     }
 
     private fun click(button: Button) {

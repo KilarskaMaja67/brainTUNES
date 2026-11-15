@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.util.Log
 import android.view.Choreographer
 import android.view.Gravity
 import android.view.View
@@ -42,6 +43,15 @@ class SongPlayActivity : AppCompatActivity() {
         const val TILE_DP = 52f
         const val EARLY_MS = 400               // a chord played up to 0.4 s before its tile arrives still counts
         const val FADE_MS = 140L
+
+        /**
+         * SYNC: the phone/emulator plays the sound a bit LATER than MediaPlayer reports
+         * (audio buffer). We move the tiles + lyrics back by this many ms so they match what you HEAR.
+         *   tiles reach the line BEFORE you hear the chord change -> make it BIGGER (e.g. 300)
+         *   tiles reach the line AFTER you hear it                 -> make it SMALLER (e.g. 50)
+         * Emulator usually needs ~200-350, a real phone ~50-150.
+         */
+        const val SYNC_OFFSET_MS = 250
     }
 
     private lateinit var songTitleText: TextView
@@ -76,6 +86,7 @@ class SongPlayActivity : AppCompatActivity() {
     private var last_reported_ms = -1
     private var last_reported_at = 0L
     private var shown_ms = 0
+    private var visual_ms = 0                  // song time that is shown on screen (= what you hear)
 
     private var blink_counter = 0
     private val handler = Handler(Looper.getMainLooper())
@@ -142,7 +153,7 @@ class SongPlayActivity : AppCompatActivity() {
 
     /** Right chord for the current (or just arriving) tile = combo +1, wrong chord = combo 0. */
     private fun score(played: Akordy.Akord) {
-        val expected = lane_tiles.lastOrNull { it.time_ms <= shown_ms + EARLY_MS } ?: return
+        val expected = lane_tiles.lastOrNull { it.time_ms <= visual_ms + EARLY_MS } ?: return
         if (expected.chord == played) {
             if (expected.time_ms != last_scored_tile_ms) {
                 last_scored_tile_ms = expected.time_ms
@@ -190,7 +201,8 @@ class SongPlayActivity : AppCompatActivity() {
 
     private fun on_frame() {
         val mp = media_player ?: return
-        val now_ms = smooth_position(mp)
+        val now_ms = (smooth_position(mp) - SYNC_OFFSET_MS).coerceAtLeast(0)
+        visual_ms = now_ms
 
         update_lane(now_ms)
         update_lyrics(now_ms)
@@ -237,6 +249,10 @@ class SongPlayActivity : AppCompatActivity() {
         val index = current_script.indexOfLast { now_ms >= it.time_ms }
         if (index == active_line_index) return
         active_line_index = index
+        if (index >= 0) {
+            // Logcat (filter "Sync"): how late the line changed compared to the .lrc - should be 0-20 ms
+            Log.d("Sync", "line ${index + 1} '${current_script[index].lyrics}' lrc=${current_script[index].time_ms} shown=$now_ms")
+        }
 
         val current = if (index >= 0) current_script[index].lyrics.ifBlank { "♪" } else "♪"
         val next = current_script.getOrNull(index + 1)?.lyrics ?: ""
@@ -256,10 +272,11 @@ class SongPlayActivity : AppCompatActivity() {
     // ------------------------------------------------------------------ song loading (as before)
 
     private fun load_song(song_number: Int) {
-        val (title, audio_res_id, lrc_res_id) = if (song_number == 1) {
-            Triple("Zawsze tam gdzie ty", R.raw.zawsze_tam_gdzie_ty_m, R.raw.zawsze_tam_gdzie_ty)
-        } else {
-            Triple("When I'm Gone", R.raw.cups_m, R.raw.cups)
+        // title, backing track (.mp3), lyrics + chords (.lrc) - both files in res/raw
+        val (title, audio_res_id, lrc_res_id) = when (song_number) {
+            1 -> Triple("Zawsze tam gdzie ty", R.raw.zawsze_tam_gdzie_ty_m, R.raw.zawsze_tam_gdzie_ty)
+            2 -> Triple("When I'm Gone", R.raw.cups_m, R.raw.cups)
+            else -> Triple("Stay With Me", R.raw.stay_with_me_m, R.raw.stay_with_me)
         }
 
         songTitleText.text = title

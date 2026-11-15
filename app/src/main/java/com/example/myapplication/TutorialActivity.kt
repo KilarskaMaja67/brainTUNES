@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -25,11 +26,11 @@ class TutorialActivity : AppCompatActivity() {
     // =================================================================== MODEL
 
     /** Head gestures and their chords - same mapping as in PlayActivity. */
-    private enum class Gesture(val chord: Akordy.Akord, val chordName: String, val move: String, val arrow: String) {
-        LEFT(Akordy.Akord.C, "C", "Tilt your head to the LEFT", "⬅"),
-        RIGHT(Akordy.Akord.G, "G", "Tilt your head to the RIGHT", "➡"),
-        UP(Akordy.Akord.AM, "A minor", "Tilt your head UP", "⬆"),
-        DOWN(Akordy.Akord.F, "F", "Tilt your head DOWN", "⬇"),
+    private enum class Gesture(val chord: Akordy.Akord, val chordName: String, val move: String, val arrow: String, val image: Int) {
+        LEFT(Akordy.Akord.C, "C", "Tilt your head to the LEFT", "⬅", R.drawable.brain_left),
+        RIGHT(Akordy.Akord.G, "G", "Tilt your head to the RIGHT", "➡", R.drawable.brain_right),
+        UP(Akordy.Akord.AM, "A minor", "Tilt your head UP", "⬆", R.drawable.brain_up),
+        DOWN(Akordy.Akord.F, "F", "Tilt your head DOWN", "⬇", R.drawable.brain_down),
     }
 
     /** The three phases: header name, intro screen texts. */
@@ -92,6 +93,7 @@ class TutorialActivity : AppCompatActivity() {
     private lateinit var bubbleRow: LinearLayout
     private lateinit var rowToPlay: LinearLayout
     private lateinit var tvChordChip: TextView
+    private lateinit var ivGesture: ImageView      // brain picture of the head move
 
     // =================================================================== LIFECYCLE
 
@@ -109,6 +111,7 @@ class TutorialActivity : AppCompatActivity() {
         bubbleRow = findViewById(R.id.bubbleRow)
         rowToPlay = findViewById(R.id.rowToPlay)
         tvChordChip = findViewById(R.id.tvChordChip)
+        ivGesture = findViewById(R.id.ivGesture)
         btnRepeat.setOnClickListener { startTutorial() }
 
         chords = Akordy(this)
@@ -258,9 +261,7 @@ class TutorialActivity : AppCompatActivity() {
                 feedback("That was ${played.chordName}. Try: ${target.move.lowercase()}", RED)
             mistakesInStep >= HINT_AFTER_MISTAKES -> {
                 feedback("Hint: ${target.move.lowercase()}", ORANGE)
-                tvArrow.text = target.arrow
-                tvArrow.setTextColor(chordColor(target.chord))
-                tvArrow.visibility = View.VISIBLE
+                showGesture(target)
             }
             else ->
                 feedback("That was ${played.chordName}. Try again!", RED)
@@ -279,9 +280,14 @@ class TutorialActivity : AppCompatActivity() {
     ) {
         tvPhase.text = header
         tvInstruction.text = instruction
-        tvArrow.text = arrow
-        tvArrow.visibility = if (arrow.isEmpty()) View.GONE else View.VISIBLE
-        if (chord != null) tvArrow.setTextColor(chordColor(chord.chord))
+        // phase 1: the brain picture shows the move (instead of a text arrow)
+        if (chord != null) {
+            showGesture(chord)
+        } else {
+            ivGesture.visibility = View.GONE
+            tvArrow.text = arrow
+            tvArrow.visibility = if (arrow.isEmpty()) View.GONE else View.VISIBLE
+        }
 
         // speech bubble only when there is something to say
         tvHint.text = hint
@@ -296,6 +302,13 @@ class TutorialActivity : AppCompatActivity() {
             rowToPlay.visibility = View.GONE
         }
         tvFeedback.text = ""
+    }
+
+    /** Brain picture of the head move (left / right / up / down). */
+    private fun showGesture(gesture: Gesture) {
+        ivGesture.setImageResource(gesture.image)
+        ivGesture.visibility = View.VISIBLE
+        tvArrow.visibility = View.GONE
     }
 
     private fun feedback(text: String, color: Int) {
@@ -335,4 +348,4 @@ class TutorialActivity : AppCompatActivity() {
         }
         return items.shuffled()
     }
-}
+}

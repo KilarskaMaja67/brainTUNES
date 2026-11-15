@@ -27,9 +27,10 @@ class SongActivity : AppCompatActivity() {
 
         val song1Btn = findViewById<Button>(R.id.song1Btn)
         val song2Btn = findViewById<Button>(R.id.song2Btn)
+        val song3Btn = findViewById<Button>(R.id.song3Btn)
         exitHintText = findViewById(R.id.exitHintText)
 
-        list_buttons = listOf(song1Btn, song2Btn)
+        list_buttons = listOf(song1Btn, song2Btn, song3Btn)
 
         song1Btn.setOnClickListener {
             selected_index = 0
@@ -41,6 +42,12 @@ class SongActivity : AppCompatActivity() {
             selected_index = 1
             update_look()
             open_song(2)
+        }
+
+        song3Btn.setOnClickListener {
+            selected_index = 2
+            update_look()
+            open_song(3)
         }
 
 
@@ -111,4 +118,4 @@ class SongActivity : AppCompatActivity() {
         super.onDestroy()
         handler.removeCallbacks(reset_blinks_Runnable)
     }
-}
+}
