@@ -2,7 +2,10 @@ package com.example.myapplication
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 
@@ -13,6 +16,16 @@ class MainActivity : AppCompatActivity() {
 
     //lista with 4 buttons from XML
     private lateinit var list_buttons: List<Button>
+
+    // "Headband connected" pill at the top (checked every second)
+    private lateinit var tvConnection: TextView
+    private val handler = Handler(Looper.getMainLooper())
+    private val check_connection_Runnable = object : Runnable {
+        override fun run() {
+            update_connection_pill()
+            handler.postDelayed(this, 1000L)
+        }
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         val songBtn = findViewById<Button>(R.id.songBtn)
 
         list_buttons = listOf(configBtn, tutorialBtn, playBtn, songBtn)
+        tvConnection = findViewById(R.id.tvConnection)
 
         // FINGER-TAP HANDLING (works now and also serves as a fallback)
         configBtn.setOnClickListener {
@@ -71,6 +85,19 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         AppControler.naBrakKalibracji = null
+        handler.removeCallbacks(check_connection_Runnable)
+    }
+
+    private fun update_connection_pill() {
+        if (AppControler.czyPolaczono()) {
+            tvConnection.text = "● Headband connected"
+            tvConnection.setTextColor(brainColor(R.color.brain_green))
+            tvConnection.setBackgroundResource(R.drawable.bg_pill_ok)
+        } else {
+            tvConnection.text = "● Waiting for the headband…"
+            tvConnection.setTextColor(brainColor(R.color.brain_orange))
+            tvConnection.setBackgroundResource(R.drawable.bg_pill_warn)
+        }
     }
 
     // so that the app controller decides what happens
@@ -78,6 +105,8 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         openingCalibration = false
         AppControler.naBrakKalibracji = { openCalibrationIfNeeded() }
+        handler.removeCallbacks(check_connection_Runnable)
+        handler.post(check_connection_Runnable)
         if (AppControler.czySkalibrowano() == false) openCalibrationIfNeeded()
         AppControler.ustawAkcje(
             up = { upMove() },
@@ -91,15 +120,7 @@ class MainActivity : AppCompatActivity() {
     // change how picked button looks
     private fun updateLook() {
         list_buttons.forEachIndexed { index, button ->
-            if (index == selected_index) {
-                button.scaleX = 1.15f
-                button.scaleY = 1.15f
-                button.alpha = 1.0f
-            } else {
-                button.scaleX = 1.0f
-                button.scaleY = 1.0f
-                button.alpha = 0.6f
-            }
+            button.setSelectedLook(index == selected_index)   // ring + bigger / dimmed (BrainUi.kt)
         }
     }
 
@@ -123,4 +144,4 @@ class MainActivity : AppCompatActivity() {
             list_buttons[selected_index].performClick()
         }
     }
-}
+}

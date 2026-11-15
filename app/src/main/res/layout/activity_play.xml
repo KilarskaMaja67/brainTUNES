@@ -1,86 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<!-- FREE PLAY: logo, title, chord cross. The played chord gets a ring in its own colour. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    style="@style/BrainScreen"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAF3D1">
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingTop="24dp"
+    android:paddingBottom="20dp">
 
+    <ImageView
+        android:id="@+id/logoImage"
+        style="@style/BrainArtSlot"
+        android:layout_width="140dp"
+        android:layout_height="110dp"
+        android:contentDescription="Logo" />
 
-    <Button
-        android:id="@+id/GdurBtn"
-        android:layout_width="135dp"
-        android:layout_height="135dp"
-        android:gravity="center"
-        android:text="G"
-        android:textSize="50sp"
-        app:backgroundTint="#F0A8A8"
-        app:cornerRadius="35dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.989"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <TextView
+        style="@style/BrainTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="Free play" />
 
-    <Button
-        android:id="@+id/AmolBtn"
-        android:layout_width="135dp"
-        android:layout_height="135dp"
-        android:gravity="center"
-        android:text="a"
-        android:textSize="50sp"
-        app:backgroundTint="#F4C46C"
-        app:cornerRadius="35dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.25" />
+    <TextView
+        style="@style/BrainSub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Move your head to play a chord" />
 
-    <Button
-        android:id="@+id/FdurBtn"
-        android:layout_width="135dp"
-        android:layout_height="135dp"
-        android:gravity="center"
-        android:text="F"
-        android:textSize="50sp"
-        app:backgroundTint="#3B6E8C"
-        app:cornerRadius="35dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.726" />
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-    <Button
-        android:id="@+id/CdurBtn"
-        android:layout_width="135dp"
-        android:layout_height="135dp"
-        android:gravity="center"
-        android:text="C"
-        android:textSize="50sp"
-        app:backgroundTint="#6B2D2D"
-        app:cornerRadius="35dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.01"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.493" />
+    <include layout="@layout/chord_cross" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1.4" />
 
     <TextView
         android:id="@+id/exitHintText"
+        style="@style/BrainHint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="blink twice to exit"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.946" />
-
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:text="blink twice to exit" />
+</LinearLayout>

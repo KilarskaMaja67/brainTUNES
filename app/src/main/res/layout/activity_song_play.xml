@@ -1,117 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<!-- PLAY ALONG: title + progress, chord lane (tiles slide left to the hit zone),
+     lyrics (whole lines fade in/out), combo, small chord cross. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    style="@style/BrainScreen"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:clipChildren="false"
-    android:paddingVertical="16dp">
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingTop="20dp"
+    android:paddingBottom="20dp">
 
-    <!-- TYTUŁ PIOSENKI NA SAMEJ GÓRZE -->
     <TextView
         android:id="@+id/songTitleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:paddingHorizontal="16dp"
-        android:text="Song Title"
-        android:textSize="30sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.02" />
+        android:textColor="@color/brain_muted"
+        android:textSize="15sp"
+        android:textStyle="bold" />
 
-    <!-- CIĄGŁA WSTĘGA TEKSTU I AKORDÓW -->
-    <HorizontalScrollView
-        android:id="@+id/lyricsScrollView"
+    <ProgressBar
+        android:id="@+id/songProgress"
+        style="@style/BrainProgress"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:clipChildren="false"
-        android:clipToPadding="false"
-        android:overScrollMode="never"
-        android:scrollbars="none"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.12">
+        android:layout_height="10dp"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="28dp"
+        android:progressDrawable="@drawable/progress_brain_teal" />
 
-        <LinearLayout
-            android:id="@+id/lyricsRibbon"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:clipChildren="false"
-            android:clipToPadding="false"
-            android:gravity="center_vertical"
-            android:orientation="horizontal" />
+    <!-- CHORD LANE: tiles are added in code and moved with translationX every frame -->
+    <FrameLayout
+        android:id="@+id/chordLane"
+        android:layout_width="match_parent"
+        android:layout_height="96dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_lane"
+        android:clipChildren="true">
 
-    </HorizontalScrollView>
+        <!-- the "now" spot: a chord should be played when its tile is here -->
+        <View
+            android:id="@+id/hitZone"
+            android:layout_width="66dp"
+            android:layout_height="74dp"
+            android:layout_gravity="center_vertical|start"
+            android:layout_marginStart="36dp"
+            android:background="@drawable/bg_hitzone" />
+    </FrameLayout>
 
-    <!-- 4 PRZYCISKI AKORDÓW -->
-    <Button
-        android:id="@+id/CdurBtn"
-        android:layout_width="155dp"
-        android:layout_height="120dp"
-        android:text="C-dur\n(LEFT)"
+    <!-- LYRICS: current line big, next line small and faded -->
+    <TextView
+        android:id="@+id/tvLyricsCurrent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="22dp"
+        android:layout_marginEnd="24dp"
+        android:gravity="center"
+        android:maxLines="2"
+        android:minLines="2"
+        android:textColor="@color/brain_ink"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvLyricsNext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="24dp"
+        android:alpha="0.6"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="@color/brain_muted"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tvCombo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text=" "
+        android:textColor="@color/brain_green"
         android:textSize="17sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.12"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.43" />
+        android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/GdurBtn"
-        android:layout_width="155dp"
-        android:layout_height="120dp"
-        android:text="G-dur\n(RIGHT)"
-        android:textSize="17sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.88"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.43" />
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-    <Button
-        android:id="@+id/AmolBtn"
-        android:layout_width="155dp"
-        android:layout_height="120dp"
-        android:text="a-moll\n(UP)"
-        android:textSize="17sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.12"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.68" />
+    <include layout="@layout/chord_cross_small" />
 
-    <Button
-        android:id="@+id/FdurBtn"
-        android:layout_width="155dp"
-        android:layout_height="120dp"
-        android:text="F-dur\n(DOWN)"
-        android:textSize="17sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.88"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.68" />
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <TextView
         android:id="@+id/exitHintText"
+        style="@style/BrainHint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="blink twice to exit"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.92" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:text="blink twice to exit" />
+</LinearLayout>

@@ -1,17 +1,16 @@
 package com.example.myapplication
 
-import android.animation.ValueAnimator
-import android.graphics.Color
-import android.graphics.Typeface
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
+import android.view.Choreographer
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
-import android.widget.HorizontalScrollView
-import android.widget.LinearLayout
+import android.widget.FrameLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -21,32 +20,62 @@ data class SongLine(
     val chord_hint: String
 )
 
-private data class RibbonItem(
-    val block: LinearLayout,
-    val lyrics_tv: TextView,
-    val chord_tv: TextView,
-    var animator: ValueAnimator? = null
+/** One chord tile on the lane: when it should be played and which chord. */
+private data class LaneTile(
+    val time_ms: Int,
+    val chord: Akordy.Akord,
+    val view: TextView
 )
 
+/**
+ * PLAY ALONG
+ *  - chord LANE: tiles slide to the left; a chord should be played when its tile reaches the "now" zone.
+ *    Moved every screen frame (Choreographer) with translationX only -> smooth, no relayout.
+ *  - LYRICS: separate from the chords - the whole line changes with a short fade (no scrolling text).
+ *  - COMBO: playing the right chord in time adds +1, a wrong chord resets it.
+ *  - chord cross at the bottom: head left = C, right = G, up = a, down = F; played chord gets a ring.
+ */
 class SongPlayActivity : AppCompatActivity() {
 
+    private companion object {
+        const val LANE_SPEED_DP_PER_S = 110f   // how fast tiles move (bigger = more space between chords)
+        const val TILE_DP = 52f
+        const val EARLY_MS = 400               // a chord played up to 0.4 s before its tile arrives still counts
+        const val FADE_MS = 140L
+    }
+
     private lateinit var songTitleText: TextView
+    private lateinit var songProgress: ProgressBar
+    private lateinit var chordLane: FrameLayout
+    private lateinit var hitZone: View
+    private lateinit var tvLyricsCurrent: TextView
+    private lateinit var tvLyricsNext: TextView
+    private lateinit var tvCombo: TextView
 
     private lateinit var CdurBtn: Button
     private lateinit var GdurBtn: Button
     private lateinit var AmolBtn: Button
     private lateinit var FdurBtn: Button
+    private lateinit var rings: Map<Akordy.Akord, View>
 
-    private lateinit var lyricsScrollView: HorizontalScrollView
-    private lateinit var lyricsRibbon: LinearLayout
     private lateinit var exitHintText: TextView
 
     private lateinit var akordy: Akordy
     private var media_player: MediaPlayer? = null
     private var paused_by_app = false          // true = we paused the song in onPause (e.g. Home button)
     private var current_script: List<SongLine> = emptyList()
-    private val line_views = mutableListOf<RibbonItem>()
-    private var active_line_index = -1
+
+    private val lane_tiles = mutableListOf<LaneTile>()
+    private var px_per_ms = 0f
+    private var active_line_index = -2         // -2 = nothing shown yet
+
+    private var combo = 0
+    private var last_scored_tile_ms = -1       // each tile can be scored only once
+
+    // smooth clock: MediaPlayer.currentPosition jumps in steps on many phones, so we fill the gaps
+    private var last_reported_ms = -1
+    private var last_reported_at = 0L
+    private var shown_ms = 0
 
     private var blink_counter = 0
     private val handler = Handler(Looper.getMainLooper())
@@ -56,13 +85,13 @@ class SongPlayActivity : AppCompatActivity() {
         exitHintText.text = "blink twice to exit"
     }
 
-    private val check_time_Runnable = object : Runnable {
-        override fun run() {
-            val mp = media_player
-            if (mp != null && mp.isPlaying) {
-                update_ribbon_scroll(mp.currentPosition)
-            }
-            handler.postDelayed(this, 30L)
+    // called once per screen frame (~60x per second) while the screen is visible
+    private var frames_running = false
+    private val frame_callback = object : Choreographer.FrameCallback {
+        override fun doFrame(frameTimeNanos: Long) {
+            if (!frames_running) return
+            on_frame()
+            Choreographer.getInstance().postFrameCallback(this)
         }
     }
 
@@ -73,165 +102,158 @@ class SongPlayActivity : AppCompatActivity() {
         akordy = Akordy(this)
 
         songTitleText = findViewById(R.id.songTitleText)
-        lyricsScrollView = findViewById(R.id.lyricsScrollView)
-        lyricsRibbon = findViewById(R.id.lyricsRibbon)
+        songProgress = findViewById(R.id.songProgress)
+        chordLane = findViewById(R.id.chordLane)
+        hitZone = findViewById(R.id.hitZone)
+        tvLyricsCurrent = findViewById(R.id.tvLyricsCurrent)
+        tvLyricsNext = findViewById(R.id.tvLyricsNext)
+        tvCombo = findViewById(R.id.tvCombo)
         CdurBtn = findViewById(R.id.CdurBtn)
         GdurBtn = findViewById(R.id.GdurBtn)
         AmolBtn = findViewById(R.id.AmolBtn)
         FdurBtn = findViewById(R.id.FdurBtn)
         exitHintText = findViewById(R.id.exitHintText)
 
-        // Blokuje reczne przesuwanie palcem, zeby nie zepsuc synchronizacji z muzyka
-        lyricsScrollView.setOnTouchListener { _, _ -> true }
+        rings = mapOf(
+            Akordy.Akord.C to findViewById<View>(R.id.ringC),
+            Akordy.Akord.G to findViewById<View>(R.id.ringG),
+            Akordy.Akord.AM to findViewById<View>(R.id.ringAm),
+            Akordy.Akord.F to findViewById<View>(R.id.ringF),
+        )
+
+        px_per_ms = dp(LANE_SPEED_DP_PER_S) / 1000f
 
         val song_number = intent.getIntExtra("NUMBER_OF_SONG", 1)   // MUST be the same key as in SongActivity
         load_song(song_number)
 
-        CdurBtn.setOnClickListener {
-            akordy.play(Akordy.Akord.C)
-        }
-
-        GdurBtn.setOnClickListener {
-            akordy.play(Akordy.Akord.G)
-        }
-
-        AmolBtn.setOnClickListener {
-            akordy.play(Akordy.Akord.AM)
-        }
-
-        FdurBtn.setOnClickListener {
-            akordy.play(Akordy.Akord.F)
-        }
+        CdurBtn.setOnClickListener { play_chord(Akordy.Akord.C) }
+        GdurBtn.setOnClickListener { play_chord(Akordy.Akord.G) }
+        AmolBtn.setOnClickListener { play_chord(Akordy.Akord.AM) }
+        FdurBtn.setOnClickListener { play_chord(Akordy.Akord.F) }
     }
 
-    private fun get_chord_color(chord_text: String): Int {
-        val clean = chord_text.trim()
-        return when {
-            clean.startsWith("C", ignoreCase = true) -> Color.parseColor("#FF3B30") // czerwony
-            clean.startsWith("F", ignoreCase = true) -> Color.parseColor("#2196F3") // niebieski
-            clean.startsWith("G", ignoreCase = true) -> Color.parseColor("#FF69B4") // rozowy
-            clean.startsWith("a", ignoreCase = true) -> Color.parseColor("#FFD600") // zolty
-            else -> Color.WHITE
-        }
+    // ------------------------------------------------------------------ chords + combo
+
+    private fun play_chord(chord: Akordy.Akord) {
+        akordy.play(chord)
+        rings.forEach { (c, ring) -> ring.setRing(if (c == chord) chordColor(c) else null) }
+        score(chord)
     }
 
-    private fun build_song_ribbon() {
-        lyricsRibbon.removeAllViews()
-        line_views.clear()
-        active_line_index = -1
+    /** Right chord for the current (or just arriving) tile = combo +1, wrong chord = combo 0. */
+    private fun score(played: Akordy.Akord) {
+        val expected = lane_tiles.lastOrNull { it.time_ms <= shown_ms + EARLY_MS } ?: return
+        if (expected.chord == played) {
+            if (expected.time_ms != last_scored_tile_ms) {
+                last_scored_tile_ms = expected.time_ms
+                combo++
+                expected.view.animate().scaleX(1.25f).scaleY(1.25f).setDuration(90)
+                    .withEndAction { expected.view.animate().scaleX(1f).scaleY(1f).setDuration(120).start() }
+                    .start()
+            }
+        } else {
+            combo = 0
+        }
+        tvCombo.text = if (combo >= 2) "🔥 Combo × $combo" else " "
+    }
 
-        val screen_width = resources.displayMetrics.widthPixels
-        val word_space = (6 * resources.displayMetrics.density).toInt()
+    // ------------------------------------------------------------------ building the lane
 
-        lyricsRibbon.addView(View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(screen_width, 1)
-        })
+    /** One tile for every chord CHANGE in the .lrc file. */
+    private fun build_lane() {
+        lane_tiles.forEach { chordLane.removeView(it.view) }
+        lane_tiles.clear()
 
+        val size = dp(TILE_DP).toInt()
+        var previous: Akordy.Akord? = null
         current_script.forEach { line ->
-            val block = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
-                setPadding(word_space, 0, word_space, 0)
-                alpha = 0.6f
+            val chord = chordFromText(line.chord_hint) ?: return@forEach
+            if (chord == previous) return@forEach
+            previous = chord
+
+            val tile = TextView(this).apply {
+                text = chord.label
+                textSize = 22f
+                setTextColor(android.graphics.Color.WHITE)
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                gravity = Gravity.CENTER
+                background = roundedBg(chordColor(chord), 16f)
+                layoutParams = FrameLayout.LayoutParams(size, size, Gravity.CENTER_VERTICAL or Gravity.START)
+                visibility = View.INVISIBLE
             }
-
-            val lyrics_tv = TextView(this).apply {
-                text = line.lyrics
-                textSize = 24f
-                setTypeface(null, Typeface.BOLD)
-                maxLines = 1
-            }
-
-            val chord_tv = TextView(this).apply {
-                text = line.chord_hint
-                textSize = 20f
-                setTypeface(null, Typeface.BOLD)
-                setTextColor(get_chord_color(line.chord_hint))
-                maxLines = 1
-            }
-
-            block.addView(lyrics_tv)
-            block.addView(chord_tv)
-            lyricsRibbon.addView(block)
-            line_views.add(RibbonItem(block, lyrics_tv, chord_tv))
-        }
-
-        lyricsRibbon.addView(View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(screen_width, 1)
-        })
-    }
-
-    private fun animate_ribbon_item(item: RibbonItem, active: Boolean) {
-        item.animator?.cancel()
-
-        val start_lyrics = item.lyrics_tv.textSize / resources.displayMetrics.scaledDensity
-        val start_chord = item.chord_tv.textSize / resources.displayMetrics.scaledDensity
-        val start_alpha = item.block.alpha
-
-        val target_lyrics = if (active) 32f else 24f
-        val target_chord = if (active) 26f else 20f
-        val target_alpha = if (active) 1.0f else 0.6f
-
-        item.animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 250L
-            addUpdateListener { anim ->
-                val t = anim.animatedValue as Float
-                item.lyrics_tv.textSize = start_lyrics + (target_lyrics - start_lyrics) * t
-                item.chord_tv.textSize = start_chord + (target_chord - start_chord) * t
-                item.block.alpha = start_alpha + (target_alpha - start_alpha) * t
-            }
-            start()
+            chordLane.addView(tile)
+            lane_tiles.add(LaneTile(line.time_ms, chord, tile))
         }
     }
 
-    private fun highlight_active_block(new_index: Int) {
-        if (active_line_index in line_views.indices) {
-            animate_ribbon_item(line_views[active_line_index], active = false)
-        }
+    // ------------------------------------------------------------------ every frame
 
-        if (new_index in line_views.indices) {
-            animate_ribbon_item(line_views[new_index], active = true)
-        }
+    private fun on_frame() {
+        val mp = media_player ?: return
+        val now_ms = smooth_position(mp)
 
-        active_line_index = new_index
+        update_lane(now_ms)
+        update_lyrics(now_ms)
+        songProgress.progress = now_ms
     }
 
-    private fun update_ribbon_scroll(current_time: Int) {
-        if (line_views.isEmpty() || lyricsScrollView.width == 0) return
-
-        val half_screen = lyricsScrollView.width / 2f
-        val current_index = current_script.indexOfLast { current_time >= it.time_ms }
-
-        if (current_index != active_line_index) {
-            highlight_active_block(current_index)
+    /** Position of the song in ms that moves smoothly every frame and never jumps back. */
+    private fun smooth_position(mp: MediaPlayer): Int {
+        if (!mp.isPlaying) return shown_ms
+        val now = SystemClock.uptimeMillis()
+        val reported = mp.currentPosition
+        if (reported != last_reported_ms) {
+            last_reported_ms = reported
+            last_reported_at = now
         }
-
-        val target_center_x: Float = when {
-            current_index == -1 -> {
-                val first_view = line_views[0].block
-                val first_center = first_view.left + first_view.width / 2f
-                val t0 = current_script[0].time_ms
-                val progress = if (t0 > 0) (current_time.toFloat() / t0).coerceIn(0f, 1f) else 1f
-                (first_center - half_screen) + progress * half_screen
-            }
-            current_index in 0 until current_script.lastIndex -> {
-                val v0 = line_views[current_index].block
-                val v1 = line_views[current_index + 1].block
-                val c0 = v0.left + v0.width / 2f
-                val c1 = v1.left + v1.width / 2f
-                val t0 = current_script[current_index].time_ms
-                val t1 = current_script[current_index + 1].time_ms
-                val progress = if (t1 > t0) ((current_time - t0).toFloat() / (t1 - t0)).coerceIn(0f, 1f) else 1f
-                c0 + progress * (c1 - c0)
-            }
-            else -> {
-                val last_view = line_views.last().block
-                last_view.left + last_view.width / 2f
-            }
-        }
-
-        lyricsScrollView.scrollTo((target_center_x - half_screen).toInt(), 0)
+        var estimate = last_reported_ms + (now - last_reported_at).toInt()
+        estimate = estimate.coerceAtMost(reported + 250)   // don't run away if the player stalls
+        if (estimate > shown_ms) shown_ms = estimate
+        return shown_ms
     }
+
+    /** Only translationX changes - this is what makes it smooth. */
+    private fun update_lane(now_ms: Int) {
+        val lane_width = chordLane.width
+        if (lane_width == 0) return
+        val hit_center = hitZone.left + hitZone.width / 2f
+        val half = dp(TILE_DP) / 2f
+
+        for (tile in lane_tiles) {
+            val x = hit_center - half + (tile.time_ms - now_ms) * px_per_ms
+            if (x < -2 * half || x > lane_width) {
+                if (tile.view.visibility != View.INVISIBLE) tile.view.visibility = View.INVISIBLE
+                continue
+            }
+            if (tile.view.visibility != View.VISIBLE) tile.view.visibility = View.VISIBLE
+            tile.view.translationX = x
+            tile.view.alpha = if (tile.time_ms < now_ms - 600) 0.35f else 1f   // already passed = faded
+        }
+    }
+
+    /** Lyrics change only when the line changes: whole line fades out and the new one fades in. */
+    private fun update_lyrics(now_ms: Int) {
+        if (current_script.isEmpty()) return
+        val index = current_script.indexOfLast { now_ms >= it.time_ms }
+        if (index == active_line_index) return
+        active_line_index = index
+
+        val current = if (index >= 0) current_script[index].lyrics.ifBlank { "♪" } else "♪"
+        val next = current_script.getOrNull(index + 1)?.lyrics ?: ""
+
+        swap_text(tvLyricsCurrent, current, 1f)
+        swap_text(tvLyricsNext, next, 0.6f)
+    }
+
+    private fun swap_text(view: TextView, text: String, visible_alpha: Float) {
+        view.animate().cancel()
+        view.animate().alpha(0f).setDuration(FADE_MS).withEndAction {
+            view.text = text
+            view.animate().alpha(visible_alpha).setDuration(FADE_MS).start()
+        }.start()
+    }
+
+    // ------------------------------------------------------------------ song loading (as before)
 
     private fun load_song(song_number: Int) {
         val (title, audio_res_id, lrc_res_id) = if (song_number == 1) {
@@ -242,14 +264,13 @@ class SongPlayActivity : AppCompatActivity() {
 
         songTitleText.text = title
         current_script = load_lrc_file(lrc_res_id)
-        build_song_ribbon()
+        build_lane()
 
         media_player = MediaPlayer.create(this, audio_res_id)?.apply {
             setVolume(0.5f, 0.5f)
+            songProgress.max = duration
             start()
         }
-
-        handler.post(check_time_Runnable)
     }
 
     private fun load_lrc_file(res_id: Int): List<SongLine> {
@@ -287,6 +308,8 @@ class SongPlayActivity : AppCompatActivity() {
         return result.sortedBy { it.time_ms }
     }
 
+    // ------------------------------------------------------------------ lifecycle
+
     override fun onPause() {
         super.onPause()
         // stop the backing track when the screen disappears (Home button, other app) - otherwise it keeps playing
@@ -294,7 +317,8 @@ class SongPlayActivity : AppCompatActivity() {
             media_player?.pause()
             paused_by_app = true
         }
-        handler.removeCallbacks(check_time_Runnable)   // don't move the ribbon while the screen is hidden
+        frames_running = false
+        Choreographer.getInstance().removeFrameCallback(frame_callback)
     }
 
     override fun onResume() {
@@ -304,8 +328,11 @@ class SongPlayActivity : AppCompatActivity() {
             media_player?.start()
             paused_by_app = false
         }
-        handler.removeCallbacks(check_time_Runnable)   // (avoid running it twice)
-        handler.post(check_time_Runnable)              // ribbon follows the music again
+        last_reported_ms = -1   // restart the smooth clock from the real position
+        if (!frames_running) {
+            frames_running = true
+            Choreographer.getInstance().postFrameCallback(frame_callback)
+        }
         blink_counter = 0
         exitHintText.text = "blink twice to exit"
 
@@ -334,8 +361,8 @@ class SongPlayActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        line_views.forEach { it.animator?.cancel() }
-        handler.removeCallbacks(check_time_Runnable)
+        frames_running = false
+        Choreographer.getInstance().removeFrameCallback(frame_callback)
         handler.removeCallbacks(reset_blinks_Runnable)
         media_player?.stop()
         media_player?.release()

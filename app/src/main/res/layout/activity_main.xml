@@ -1,128 +1,156 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<!-- MENU: logo on top, connection pill, 4 tiles with a slot for a brain drawing next to each (alternating sides). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main"
+    style="@style/BrainScreen"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:background="#FAF3D1">
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingStart="28dp"
+    android:paddingTop="24dp"
+    android:paddingEnd="28dp"
+    android:paddingBottom="20dp">
 
-
-    <Button
-        android:id="@+id/playBtn"
-        android:layout_width="250dp"
-        android:layout_height="120dp"
-        android:fontFamily="sans-serif-light"
-        android:text="PLAY"
-        android:textSize="40sp"
-        app:backgroundTint="#6B2D2D"
-        app:cornerRadius="30dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.552"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.648" />
-
-    <Button
-        android:id="@+id/tutorialBtn"
-        android:layout_width="250dp"
-        android:layout_height="120dp"
-        android:fontFamily="sans-serif-light"
-        android:text="TUTORIAL"
-        android:textSize="40sp"
-        app:backgroundTint="#3B6E8C"
-        app:cornerRadius="30dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.552"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.332" />
-
+    <!-- LOGO: add android:src="@drawable/logo" and remove the style line -->
     <ImageView
-        android:id="@+id/logoImageView1"
-        android:layout_width="107dp"
-        android:layout_height="137dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/mozgtuto_"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.052"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.341" />
+        android:id="@+id/logoImage"
+        style="@style/BrainArtSlot"
+        android:layout_width="140dp"
+        android:layout_height="110dp"
+        android:contentDescription="Logo" />
 
-    <Button
-        android:id="@+id/configBtn"
-        android:layout_width="250dp"
-        android:layout_height="120dp"
-        android:fontFamily="sans-serif-light"
-        android:text="CONFING"
-        android:textSize="40sp"
-        app:backgroundTint="#6B2D2D"
-        app:cornerRadius="30dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.496"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.055" />
+    <TextView
+        android:id="@+id/tvConnection"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:background="@drawable/bg_pill_warn"
+        android:paddingStart="14dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="6dp"
+        android:text="● Waiting for the headband…"
+        android:textColor="@color/brain_orange"
+        android:textSize="13sp"
+        android:textStyle="bold" />
 
+    <!-- row 1: art | Calibrate -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="26dp"
+        android:clipChildren="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <ImageView
-        android:id="@+id/logoImageView2"
-        android:layout_width="142dp"
-        android:layout_height="179dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/mozgmusic"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.94"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.528" />
+        <ImageView
+            android:id="@+id/brainConfig"
+            style="@style/BrainArtSlot"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_marginEnd="14dp"
+            android:contentDescription="Brain" />
 
-    <ImageView
-        android:id="@+id/logoImageView3"
-        android:layout_width="122dp"
-        android:layout_height="117dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/mozgkonf"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/configBtn"
+            style="@style/BrainTile"
+            android:layout_width="0dp"
+            android:layout_height="76dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_tile_burgundy"
+            android:text="Calibrate" />
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/songBtn"
-        android:layout_width="250dp"
-        android:layout_height="120dp"
-        android:fontFamily="sans-serif-light"
-        android:text="SONG"
-        android:textSize="40sp"
-        app:backgroundTint="#3B6E8C"
-        app:cornerRadius="30dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.602"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.937" />
+    <!-- row 2: Tutorial | art -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:clipChildren="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <ImageView
-        android:id="@+id/logoImageView4"
-        android:layout_width="131dp"
-        android:layout_height="151dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/mozgsong"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.057"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.912" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/tutorialBtn"
+            style="@style/BrainTile"
+            android:layout_width="0dp"
+            android:layout_height="76dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_tile_slate"
+            android:text="Tutorial" />
+
+        <ImageView
+            android:id="@+id/brainTutorial"
+            style="@style/BrainArtSlot"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_marginStart="14dp"
+            android:contentDescription="Brain" />
+    </LinearLayout>
+
+    <!-- row 3: art | Play -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:clipChildren="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/brainPlay"
+            style="@style/BrainArtSlot"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_marginEnd="14dp"
+            android:contentDescription="Brain" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/playBtn"
+            style="@style/BrainTile"
+            android:layout_width="0dp"
+            android:layout_height="76dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_tile_mauve"
+            android:text="Play" />
+    </LinearLayout>
+
+    <!-- row 4: Songs | art -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:clipChildren="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/songBtn"
+            style="@style/BrainTile"
+            android:layout_width="0dp"
+            android:layout_height="76dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_tile_slate"
+            android:text="Songs" />
+
+        <ImageView
+            android:id="@+id/brainSong"
+            style="@style/BrainArtSlot"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_marginStart="14dp"
+            android:contentDescription="Brain" />
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        style="@style/BrainHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="⬆ ⬇  move   ·   ➡  open" />
+</LinearLayout>

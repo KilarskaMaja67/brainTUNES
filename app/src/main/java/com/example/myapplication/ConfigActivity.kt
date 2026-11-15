@@ -8,7 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.Button
-import android.widget.ProgressBar
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -24,7 +24,10 @@ import androidx.appcompat.app.AppCompatActivity
 class ConfigActivity : AppCompatActivity() {
 
     private lateinit var tvConnection: TextView
-    private lateinit var progressBar: ProgressBar
+    private lateinit var segments: LinearLayout       // 18 small bars = progress
+    private lateinit var tvArrow: TextView
+    private lateinit var tvBottomHint: TextView
+    private lateinit var checklistIcons: List<TextView>  // Sit still / Blink / Head moves
     private lateinit var tvInstruction: TextView
     private lateinit var tvStep: TextView
     private lateinit var tvContact: TextView
@@ -39,19 +42,28 @@ class ConfigActivity : AppCompatActivity() {
     private var finished = false        // showing the result
     private var lastStepMs = 0L         // when the last message from Python arrived
 
-    private val GREEN = Color.rgb(46, 125, 50)
-    private val ORANGE = Color.rgb(230, 120, 0)
     private val RED = Color.rgb(198, 40, 40)
 
     // number of action steps: rest + 5 blinks + 4 directions x 3
     private val TOTAL_STEPS = 1 + 5 + 12
+
+    /** Progress 0..TOTAL_STEPS - drawn as segments. */
+    private var calProgress = 0
+        set(value) { field = value; drawSegments() }
+
+    /** Checklist: 0 = sitting still, 1 = blinks, 2 = head moves, 3 = everything done. */
+    private var stage = 0
+        set(value) { field = value; drawChecklist() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_config)
 
         tvConnection = findViewById(R.id.tvConnection)
-        progressBar = findViewById(R.id.calibrationProgress)
+        segments = findViewById(R.id.calibrationSegments)
+        tvArrow = findViewById(R.id.tvArrow)
+        tvBottomHint = findViewById(R.id.tvBottomHint)
+        checklistIcons = listOf<TextView>(findViewById(R.id.iconRest), findViewById(R.id.iconBlink), findViewById(R.id.iconHead))
         tvInstruction = findViewById(R.id.tvInstruction)
         tvStep = findViewById(R.id.tvStep)
         tvContact = findViewById(R.id.tvContact)
@@ -59,7 +71,7 @@ class ConfigActivity : AppCompatActivity() {
         btnRepeat = findViewById(R.id.btnRepeat)
         btnDone = findViewById(R.id.btnDone)
 
-        progressBar.max = TOTAL_STEPS
+        buildSegments()
         btnRepeat.setOnClickListener { start() }
         btnDone.setOnClickListener { finish() }
 
@@ -98,8 +110,11 @@ class ConfigActivity : AppCompatActivity() {
         lastStepMs = 0L
         btnRepeat.visibility = View.GONE
         btnDone.visibility = View.GONE
-        progressBar.progress = 0
-        tvContact.text = ""
+        calProgress = 0
+        stage = 0
+        tvArrow.visibility = View.GONE
+        tvBottomHint.text = "♪  Wait for the sound, then move"
+        tvContact.visibility = View.GONE
         tvResult.text = ""
         tvConnection.text = ""
         tvInstruction.text = "Connecting to the headband…"
@@ -133,22 +148,25 @@ class ConfigActivity : AppCompatActivity() {
         when (name) {
             "REST" -> {
                 instruction("Sit still", "Look straight ahead, don't move (5 s)")
-                progressBar.progress = 1
+                calProgress = 1
+                stage = 0
             }
             "CONTACT" -> {
                 val good = rest.startsWith("GOOD")
-                tvContact.text = if (good) "✅ Good headband contact"
-                else "⚠️ Weak headband contact – press it to your forehead and move your hair aside"
-                tvContact.setTextColor(if (good) GREEN else ORANGE)
+                tvContact.visibility = View.VISIBLE
+                tvContact.text = if (good) "● Good headband contact"
+                else "● Weak contact – press the headband to your forehead, move your hair aside"
+                tvContact.setTextColor(brainColor(if (good) R.color.brain_green else R.color.brain_orange))
+                tvContact.setBackgroundResource(if (good) R.drawable.bg_pill_ok else R.drawable.bg_pill_warn)
             }
             "GET_READY" -> instruction("Get ready…", "Next task in a moment")
             "WAIT" -> tvInstruction.text = "…rest"
-            "BLINK1" -> action("Blink HARD", "Blink $rest", 1 + nr)
-            "BLINK2" -> action("Blink twice quickly", "Blink $rest", 1 + nr)
-            "HEAD_L" -> action("⬅ Head LEFT\nand back", "Move $rest", 6 + nr)
-            "HEAD_P" -> action("➡ Head RIGHT\nand back", "Move $rest", 9 + nr)
-            "HEAD_GORA" -> action("⬆ Head UP\nand back", "Move $rest", 12 + nr)
-            "HEAD_DOL" -> action("⬇ Head DOWN\nand back", "Move $rest", 15 + nr)
+            "BLINK1" -> { stage = 1; action("Blink HARD", "Blink $rest", 1 + nr) }
+            "BLINK2" -> { stage = 1; action("Blink twice quickly", "Blink $rest", 1 + nr) }
+            "HEAD_L" -> { stage = 2; action("Head LEFT\nand back", "Move $rest", 6 + nr, "⬅") }
+            "HEAD_P" -> { stage = 2; action("Head RIGHT\nand back", "Move $rest", 9 + nr, "➡") }
+            "HEAD_GORA" -> { stage = 2; action("Head UP\nand back", "Move $rest", 12 + nr, "⬆") }
+            "HEAD_DOL" -> { stage = 2; action("Head DOWN\nand back", "Move $rest", 15 + nr, "⬇") }
             "RESULT" -> showResult(rest)
             "DONE" -> end(success = true)
             "FAIL" -> end(success = false)
@@ -157,36 +175,78 @@ class ConfigActivity : AppCompatActivity() {
 
     private fun showResult(result: String) {
         // e.g. "BLINK=OK HEAD=WEAK"
-        val blink = if (result.contains("BLINK=OK")) "✅ Blink: OK" else "⚠️ Blink: too weak – blink harder"
-        val head = if (result.contains("HEAD=OK")) "✅ Head moves: OK" else "⚠️ Head moves: unclear – make bigger moves"
+        val blink = if (result.contains("BLINK=OK")) "✓ Blink: OK" else "! Blink: too weak – blink harder"
+        val head = if (result.contains("HEAD=OK")) "✓ Head moves: OK" else "! Head moves: unclear – make bigger moves"
         tvResult.text = "$blink\n$head"
     }
 
     private fun end(success: Boolean) {
         running = false
         finished = true
-        progressBar.progress = TOTAL_STEPS
+        calProgress = TOTAL_STEPS
+        if (success) stage = 3
         btnRepeat.visibility = View.VISIBLE
         btnDone.visibility = View.VISIBLE
+        tvBottomHint.text = "⬅  repeat   ·   ➡  done"
         if (success) {
-            instruction("Calibration done! ✅", "Returning to the menu in a moment…")
+            instruction("Calibration done!", "Returning to the menu in a moment…")
             handler.postDelayed({ if (finished) finish() }, 5000)
         } else {
-            instruction("Calibration failed ⚠️", "Adjust the headband and repeat")
+            instruction("Calibration failed", "Adjust the headband and repeat")
         }
     }
 
     // ------------------------------------------------------------------ look
 
-    private fun instruction(main: String, sub: String) {
+    /** Big card: optional arrow + instruction + small text under it. */
+    private fun instruction(main: String, sub: String, arrow: String = "") {
         tvInstruction.text = main
         tvStep.text = sub
+        tvArrow.text = arrow
+        tvArrow.visibility = if (arrow.isEmpty()) View.GONE else View.VISIBLE
     }
 
-    private fun action(main: String, sub: String, progress: Int) {
-        instruction(main, sub)
-        progressBar.progress = progress
+    private fun action(main: String, sub: String, progress: Int, arrow: String = "") {
+        instruction(main, sub, arrow)
+        calProgress = progress
         try { tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 150) } catch (_: Exception) { }
+    }
+
+    private fun buildSegments() {
+        segments.removeAllViews()
+        val gap = dp(2f).toInt()
+        repeat(TOTAL_STEPS) {
+            val bar = View(this)
+            bar.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
+                .apply { setMargins(gap, 0, gap, 0) }
+            segments.addView(bar)
+        }
+        drawSegments()
+    }
+
+    /** done = teal, current = mustard, rest = light grey */
+    private fun drawSegments() {
+        if (!::segments.isInitialized) return
+        for (i in 0 until segments.childCount) {
+            val color = when {
+                i < calProgress -> brainColor(R.color.brain_teal)
+                i == calProgress && running -> brainColor(R.color.brain_mustard)
+                else -> brainColor(R.color.brain_track)
+            }
+            segments.getChildAt(i).background = roundedBg(color, 4f)
+        }
+    }
+
+    /** ✓ green = done, ● mustard = now, empty grey = not yet */
+    private fun drawChecklist() {
+        if (!::checklistIcons.isInitialized) return
+        checklistIcons.forEachIndexed { i, icon ->
+            when {
+                i < stage -> { icon.text = "✓"; icon.background = roundedBg(brainColor(R.color.brain_green), 9f) }
+                i == stage -> { icon.text = "●"; icon.background = roundedBg(brainColor(R.color.brain_mustard), 9f) }
+                else -> { icon.text = ""; icon.background = roundedBg(brainColor(R.color.brain_track), 9f) }
+            }
+        }
     }
 
     private fun click(button: Button) {

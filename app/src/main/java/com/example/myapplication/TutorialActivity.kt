@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -57,9 +58,11 @@ class TutorialActivity : AppCompatActivity() {
         const val HINT_AFTER_MISTAKES = 2     // phases 2-3: show a hint after this many mistakes in one step
         const val LEARN_ROUNDS = 2
 
-        val GREEN = Color.rgb(46, 125, 50)
+        val GREEN = Color.rgb(79, 138, 91)
         val RED = Color.rgb(198, 40, 40)
-        val ORANGE = Color.rgb(230, 120, 0)
+        val ORANGE = Color.rgb(181, 101, 29)
+
+        const val LEARN_BUBBLE = "Tilt and come straight back to the middle!"
     }
 
     // =================================================================== STATE
@@ -86,6 +89,9 @@ class TutorialActivity : AppCompatActivity() {
     private lateinit var tvHint: TextView
     private lateinit var tvFeedback: TextView
     private lateinit var btnRepeat: Button
+    private lateinit var bubbleRow: LinearLayout
+    private lateinit var rowToPlay: LinearLayout
+    private lateinit var tvChordChip: TextView
 
     // =================================================================== LIFECYCLE
 
@@ -100,6 +106,9 @@ class TutorialActivity : AppCompatActivity() {
         tvHint = findViewById(R.id.tvHint)
         tvFeedback = findViewById(R.id.tvFeedback)
         btnRepeat = findViewById(R.id.btnRepeat)
+        bubbleRow = findViewById(R.id.bubbleRow)
+        rowToPlay = findViewById(R.id.rowToPlay)
+        tvChordChip = findViewById(R.id.tvChordChip)
         btnRepeat.setOnClickListener { startTutorial() }
 
         chords = Akordy(this)
@@ -173,7 +182,7 @@ class TutorialActivity : AppCompatActivity() {
         showIntro(step, step.phase.introTitle, step.phase.introText, PHASE_INTRO_MS)
 
     private fun showRoundIntro(step: Step) =
-        showIntro(step, "Round ${step.round}", "Each move once more - this time in a different order.", ROUND_INTRO_MS)
+        showIntro(step, "Once more!", "Each move once more - this time in a different order.", ROUND_INTRO_MS)
 
     private fun showIntro(step: Step, title: String, text: String, durationMs: Long) {
         state = State.INTRO
@@ -190,8 +199,10 @@ class TutorialActivity : AppCompatActivity() {
         when (currentStep.phase) {
             Phase.LEARN -> render(
                 header = headerFor(currentStep),
-                instruction = "${gesture.move}\nto play ${gesture.chordName}",
+                instruction = gesture.move.replace(" to the ", "\nto the "),   // "Tilt your head\nto the RIGHT"
                 arrow = gesture.arrow,
+                hint = LEARN_BUBBLE,
+                chord = gesture,                                                // "to play [G]"
             )
             Phase.RECALL -> render(
                 header = headerFor(currentStep),
@@ -248,6 +259,8 @@ class TutorialActivity : AppCompatActivity() {
             mistakesInStep >= HINT_AFTER_MISTAKES -> {
                 feedback("Hint: ${target.move.lowercase()}", ORANGE)
                 tvArrow.text = target.arrow
+                tvArrow.setTextColor(chordColor(target.chord))
+                tvArrow.visibility = View.VISIBLE
             }
             else ->
                 feedback("That was ${played.chordName}. Try again!", RED)
@@ -256,12 +269,32 @@ class TutorialActivity : AppCompatActivity() {
 
     // =================================================================== UI HELPERS
 
-    /** Sets all main texts at once (anything not given is cleared). */
-    private fun render(header: String, instruction: String, arrow: String = "", hint: String = "") {
+    /** Sets all main texts at once (anything not given is cleared / hidden). */
+    private fun render(
+        header: String,
+        instruction: String,
+        arrow: String = "",
+        hint: String = "",
+        chord: Gesture? = null,
+    ) {
         tvPhase.text = header
         tvInstruction.text = instruction
         tvArrow.text = arrow
+        tvArrow.visibility = if (arrow.isEmpty()) View.GONE else View.VISIBLE
+        if (chord != null) tvArrow.setTextColor(chordColor(chord.chord))
+
+        // speech bubble only when there is something to say
         tvHint.text = hint
+        bubbleRow.visibility = if (hint.isEmpty()) View.GONE else View.VISIBLE
+
+        // "to play [G]" chip in the chord's colour (phase 1 only)
+        if (chord != null) {
+            tvChordChip.text = chord.chord.label
+            tvChordChip.background = roundedBg(chordColor(chord.chord), 12f)
+            rowToPlay.visibility = View.VISIBLE
+        } else {
+            rowToPlay.visibility = View.GONE
+        }
         tvFeedback.text = ""
     }
 
@@ -270,10 +303,8 @@ class TutorialActivity : AppCompatActivity() {
         tvFeedback.setTextColor(color)
     }
 
-    private fun headerFor(step: Step): String {
-        val base = "Phase ${step.phase.number}/${Phase.values().size} · ${step.phase.title}"
-        return if (step.phase == Phase.LEARN) "$base · round ${step.round}/$LEARN_ROUNDS" else base
-    }
+    private fun headerFor(step: Step): String =
+        "Phase ${step.phase.number}/${Phase.values().size} · ${step.phase.title}"
 
     /** e.g. "✓C → ✓G → [A minor] → F" */
     private fun progressionStatus(): String {
@@ -304,4 +335,4 @@ class TutorialActivity : AppCompatActivity() {
         }
         return items.shuffled()
     }
-}
+}

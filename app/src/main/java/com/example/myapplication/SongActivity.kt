@@ -83,15 +83,7 @@ class SongActivity : AppCompatActivity() {
 
     private fun update_look() {
         list_buttons.forEachIndexed { index, button ->
-            if (index == selected_index) {
-                button.scaleX = 1.15f
-                button.scaleY = 1.15f
-                button.alpha = 1.0f
-            } else {
-                button.scaleX = 1.0f
-                button.scaleY = 1.0f
-                button.alpha = 0.6f
-            }
+            button.setSelectedLook(index == selected_index)   // ring + bigger / dimmed (BrainUi.kt)
         }
     }
 
@@ -119,4 +111,4 @@ class SongActivity : AppCompatActivity() {
         super.onDestroy()
         handler.removeCallbacks(reset_blinks_Runnable)
     }
-}
+}
