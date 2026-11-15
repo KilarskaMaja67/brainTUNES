@@ -21,8 +21,11 @@ object AppControler {
     private var down: (() -> Unit)? = null
     private var blink: (() -> Unit)? = null
 
-    // opcjonalnie: ekran kalibracji moze pokazywac kroki ("BLINK1 1/5", "HEAD_L 2/3", "DONE"...)
+    // ekran kalibracji (ConfigActivity) dostaje tu kolejne kroki: "BLINK1 1/5", "HEAD_L 2/3", "CONTACT GOOD 25", "DONE"...
     var naKrokKalibracji: ((String) -> Unit)? = null
+
+    // wolane, gdy laptop zglosi, ze NIE ma zapisanej kalibracji (MainActivity otwiera wtedy ekran kalibracji)
+    var naBrakKalibracji: (() -> Unit)? = null
 
     fun ustawAkcje(
         left: (() -> Unit)? = null,
@@ -49,6 +52,9 @@ object AppControler {
         eeg = receiver
         receiver.start()
         scope.launch {
+            receiver.calibrated.collect { stan -> if (stan == false) naBrakKalibracji?.invoke() }
+        }
+        scope.launch {
             receiver.events.collect { event ->
                 when (event) {
                     is EegEvent.Command -> when (event.command) {
@@ -68,7 +74,10 @@ object AppControler {
     /** Czy laptop z Pythonem odpowiada (np. do pokazania statusu na ekranie). */
     fun czyPolaczono(): Boolean = eeg?.connected?.value == true
 
-    /** Popros skrypt Pythona o ponowna kalibracje (np. z ConfigActivity). */
+    /** null = jeszcze nie wiadomo (laptop nie odpowiedzial), true/false = czy jest zapisana kalibracja. */
+    fun czySkalibrowano(): Boolean? = eeg?.calibrated?.value
+
+    /** Popros skrypt Pythona o (ponowna) kalibracje - nadpisuje zapisana. */
     fun kalibruj() {
         eeg?.requestCalibration()
     }

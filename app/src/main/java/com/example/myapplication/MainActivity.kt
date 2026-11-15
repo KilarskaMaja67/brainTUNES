@@ -59,9 +59,26 @@ class MainActivity : AppCompatActivity() {
         updateLook()
     }
 
+    // first launch (no calibration saved on the laptop) -> open the calibration screen automatically
+    private var openingCalibration = false
+
+    private fun openCalibrationIfNeeded() {
+        if (openingCalibration) return
+        openingCalibration = true
+        startActivity(Intent(this, ConfigActivity::class.java))
+    }
+
+    override fun onPause() {
+        super.onPause()
+        AppControler.naBrakKalibracji = null
+    }
+
     // so that the app controller decides what happens
     override fun onResume() {
         super.onResume()
+        openingCalibration = false
+        AppControler.naBrakKalibracji = { openCalibrationIfNeeded() }
+        if (AppControler.czySkalibrowano() == false) openCalibrationIfNeeded()
         AppControler.ustawAkcje(
             up = { upMove() },
             down = { downMove() },

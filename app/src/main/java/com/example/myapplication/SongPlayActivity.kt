@@ -31,6 +31,7 @@ class SongPlayActivity : AppCompatActivity() {
 
     private lateinit var akordy: Akordy
     private var media_player: MediaPlayer? = null
+    private var paused_by_app = false          // true = we paused the song in onPause (e.g. Home button)
     private var current_script: List<SongLine> = emptyList()
 
     private var blink_counter = 0
@@ -76,22 +77,18 @@ class SongPlayActivity : AppCompatActivity() {
         load_song(song_number)
 
         CdurBtn.setOnClickListener {
-            CdurBtn.animation_click()
             akordy.play(Akordy.Akord.C)
         }
 
         GdurBtn.setOnClickListener {
-            GdurBtn.animation_click()
             akordy.play(Akordy.Akord.G)
         }
 
         AmolBtn.setOnClickListener {
-            AmolBtn.animation_click()
             akordy.play(Akordy.Akord.AM)
         }
 
         FdurBtn.setOnClickListener {
-            FdurBtn.animation_click()
             akordy.play(Akordy.Akord.F)
         }
     }
@@ -148,8 +145,22 @@ class SongPlayActivity : AppCompatActivity() {
         return result.sortedBy { it.time_ms }
     }
 
+    override fun onPause() {
+        super.onPause()
+        // stop the backing track when the screen disappears (Home button, other app) - otherwise it keeps playing
+        if (media_player?.isPlaying == true) {
+            media_player?.pause()
+            paused_by_app = true
+        }
+    }
+
     override fun onResume() {
         super.onResume()
+        // resume the backing track if we paused it in onPause
+        if (paused_by_app) {
+            media_player?.start()
+            paused_by_app = false
+        }
         blink_counter = 0
         exitHintText.text = "blink twice to exit"
 

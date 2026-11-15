@@ -42,22 +42,18 @@ class PlayActivity : AppCompatActivity() {
         exitHintText = findViewById(R.id.exitHintText)
 
         CdurBtn.setOnClickListener {
-            CdurBtn.animation_click()
             akordy.play(Akordy.Akord.C)
         }
 
         GdurBtn.setOnClickListener {
-            GdurBtn.animation_click()
             akordy.play(Akordy.Akord.G)
         }
 
         AmolBtn.setOnClickListener {
-            AmolBtn.animation_click()
             akordy.play(Akordy.Akord.AM)
         }
 
         FdurBtn.setOnClickListener {
-            FdurBtn.animation_click()
             akordy.play(Akordy.Akord.F)
         }
 

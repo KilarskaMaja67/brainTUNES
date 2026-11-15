@@ -13,13 +13,13 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * EKRAN KALIBRACJI.
- * Po wejsciu kalibracja startuje SAMA (przed kalibracja gesty jeszcze nie dzialaja).
- * Python mierzy i liczy, a ten ekran pokazuje polecenia, piszczy w momencie akcji,
- * ocenia kontakt opaski i pokazuje wynik. Nowa kalibracja nadpisuje zapisana.
+ * CALIBRATION SCREEN.
+ * Calibration starts AUTOMATICALLY when the screen opens (gestures don't work before calibration).
+ * Python measures and computes; this screen shows the instructions, beeps on each action,
+ * rates the headband contact and shows the result. A new calibration overwrites the saved one.
  *
- * Po zakonczeniu:  ⬅ glowa w lewo = Powtorz,  ➡ glowa w prawo = Gotowe (albo palcem).
- * Udana kalibracja sama wraca do menu po 5 s.
+ * When finished:  ⬅ head left = Repeat,  ➡ head right = Done (or tap).
+ * A successful calibration returns to the menu automatically after 5 s.
  */
 class ConfigActivity : AppCompatActivity() {
 
@@ -69,11 +69,11 @@ class ConfigActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         AppControler.naKrokKalibracji = { onKrok(it) }
-        // w trakcie kalibracji Python nie wysyla komend; po niej: lewo = Powtorz, prawo = Gotowe
+        // Python sends no commands during calibration; afterwards: left = Repeat, right = Done
         AppControler.ustawAkcje(
-            up = { finish() },          // glowa w gore = powrot
-            lewo = { if (zakonczona) kliknij(btnPowtorz) },
-            prawo = { if (zakonczona) kliknij(btnGotowe) },
+            up = { finish() },          // head up = back
+            left = { if (zakonczona) kliknij(btnPowtorz) },
+            right = { if (zakonczona) kliknij(btnGotowe) },
         )
         if (!trwa && !zakonczona) zacznij()
     }
@@ -102,8 +102,8 @@ class ConfigActivity : AppCompatActivity() {
         tvKontakt.text = ""
         tvWynik.text = ""
         tvPolaczenie.text = ""
-        tvPolecenie.text = "Łączenie z opaską…"
-        tvKrok.text = "Załóż opaskę i usiądź wygodnie"
+        tvPolecenie.text = "Connecting to the headband…"
+        tvKrok.text = "Put on the headband and sit comfortably"
         AppControler.kalibruj()
         handler.postDelayed(sprawdzCzyRuszylo, 5000)
     }
@@ -112,7 +112,7 @@ class ConfigActivity : AppCompatActivity() {
     private val sprawdzCzyRuszylo = object : Runnable {
         override fun run() {
             if (trwa && ostatniKrokMs == 0L) {
-                tvPolaczenie.text = "Brak odpowiedzi z laptopa – czy skrypt Pythona działa?"
+                tvPolaczenie.text = "No response from the laptop – is the Python script running?"
                 tvPolaczenie.setTextColor(CZERWONY)
                 AppControler.kalibruj()
                 handler.postDelayed(this, 5000)
@@ -131,23 +131,23 @@ class ConfigActivity : AppCompatActivity() {
 
         when (nazwa) {
             "REST" -> {
-                polecenie("Siedź spokojnie", "Patrz przed siebie, nie ruszaj się (5 s)")
+                polecenie("Sit still", "Look straight ahead, don't move (5 s)")
                 pasek.progress = 1
             }
             "CONTACT" -> {
                 val dobry = reszta.startsWith("GOOD")
-                tvKontakt.text = if (dobry) "✅ Opaska dobrze przylega"
-                else "⚠️ Słaby kontakt opaski – dociśnij ją na czole i odgarnij włosy"
+                tvKontakt.text = if (dobry) "✅ Good headband contact"
+                else "⚠️ Weak headband contact – press it to your forehead and move your hair aside"
                 tvKontakt.setTextColor(if (dobry) ZIELONY else POMARANCZOWY)
             }
-            "GET_READY" -> polecenie("Przygotuj się…", "Za chwilę kolejne zadanie")
-            "WAIT" -> tvPolecenie.text = "…odpoczynek"
-            "BLINK1" -> akcja("Mrugnij MOCNO", "Mrugnięcie $reszta", 1 + nr)
-            "BLINK2" -> akcja("Mrugnij 2× szybko", "Mrugnięcie $reszta", 1 + nr)
-            "HEAD_L" -> akcja("⬅ Głowa w LEWO\ni wróć", "Ruch $reszta", 6 + nr)
-            "HEAD_P" -> akcja("➡ Głowa w PRAWO\ni wróć", "Ruch $reszta", 9 + nr)
-            "HEAD_GORA" -> akcja("⬆ Głowa do GÓRY\ni wróć", "Ruch $reszta", 12 + nr)
-            "HEAD_DOL" -> akcja("⬇ Głowa w DÓŁ\ni wróć", "Ruch $reszta", 15 + nr)
+            "GET_READY" -> polecenie("Get ready…", "Next task in a moment")
+            "WAIT" -> tvPolecenie.text = "…rest"
+            "BLINK1" -> akcja("Blink HARD", "Blink $reszta", 1 + nr)
+            "BLINK2" -> akcja("Blink twice quickly", "Blink $reszta", 1 + nr)
+            "HEAD_L" -> akcja("⬅ Head LEFT\nand back", "Move $reszta", 6 + nr)
+            "HEAD_P" -> akcja("➡ Head RIGHT\nand back", "Move $reszta", 9 + nr)
+            "HEAD_GORA" -> akcja("⬆ Head UP\nand back", "Move $reszta", 12 + nr)
+            "HEAD_DOL" -> akcja("⬇ Head DOWN\nand back", "Move $reszta", 15 + nr)
             "RESULT" -> pokazWynik(reszta)
             "DONE" -> zakoncz(udana = true)
             "FAIL" -> zakoncz(udana = false)
@@ -155,9 +155,9 @@ class ConfigActivity : AppCompatActivity() {
     }
 
     private fun pokazWynik(wynik: String) {
-        // np. "BLINK=OK HEAD=WEAK"
-        val mrug = if (wynik.contains("BLINK=OK")) "✅ Mrugnięcie: OK" else "⚠️ Mrugnięcie: za słabe – mrugaj mocniej"
-        val glowa = if (wynik.contains("HEAD=OK")) "✅ Ruchy głowy: OK" else "⚠️ Ruchy głowy: niewyraźne – rób większe ruchy"
+        // e.g. "BLINK=OK HEAD=WEAK"
+        val mrug = if (wynik.contains("BLINK=OK")) "✅ Blink: OK" else "⚠️ Blink: too weak – blink harder"
+        val glowa = if (wynik.contains("HEAD=OK")) "✅ Head moves: OK" else "⚠️ Head moves: unclear – make bigger moves"
         tvWynik.text = "$mrug\n$glowa"
     }
 
@@ -168,10 +168,10 @@ class ConfigActivity : AppCompatActivity() {
         btnPowtorz.visibility = View.VISIBLE
         btnGotowe.visibility = View.VISIBLE
         if (udana) {
-            polecenie("Kalibracja gotowa! ✅", "Za chwilę wrócisz do menu…")
+            polecenie("Calibration done! ✅", "Returning to the menu in a moment…")
             handler.postDelayed({ if (zakonczona) finish() }, 5000)
         } else {
-            polecenie("Kalibracja nieudana ⚠️", "Popraw opaskę i powtórz")
+            polecenie("Calibration failed ⚠️", "Adjust the headband and repeat")
         }
     }
 
