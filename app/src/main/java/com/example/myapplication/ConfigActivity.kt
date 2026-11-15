@@ -12,22 +12,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
-/**
- * CALIBRATION SCREEN.
- * Calibration starts AUTOMATICALLY when the screen opens (gestures don't work before calibration).
- * Python measures and computes; this screen shows the instructions, beeps on each action,
- * rates the headband contact and shows the result. A new calibration overwrites the saved one.
- *
- * When finished:  ⬅ head left = Repeat,  ➡ head right = Done (or tap).
- * A successful calibration returns to the menu automatically after 5 s.
- */
+
 class ConfigActivity : AppCompatActivity() {
 
     private lateinit var tvConnection: TextView
-    private lateinit var segments: LinearLayout       // 18 small bars = progress
+    private lateinit var segments: LinearLayout       
     private lateinit var tvArrow: TextView
     private lateinit var tvBottomHint: TextView
-    private lateinit var checklistIcons: List<TextView>  // Sit still / Blink / Head moves
+    private lateinit var checklistIcons: List<TextView>  
     private lateinit var tvInstruction: TextView
     private lateinit var tvStep: TextView
     private lateinit var tvContact: TextView
@@ -47,11 +39,11 @@ class ConfigActivity : AppCompatActivity() {
     // number of action steps: rest + 5 blinks + 4 directions x 3
     private val TOTAL_STEPS = 1 + 5 + 12
 
-    /** Progress 0..TOTAL_STEPS - drawn as segments. */
+
     private var calProgress = 0
         set(value) { field = value; drawSegments() }
 
-    /** Checklist: 0 = sitting still, 1 = blinks, 2 = head moves, 3 = everything done. */
+    // 0 = sitting still, 1 = blinks, 2 = head moves, 3 = everything done
     private var stage = 0
         set(value) { field = value; drawChecklist() }
 
@@ -81,7 +73,8 @@ class ConfigActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         AppControler.naKrokKalibracji = { onStep(it) }
-        // Python sends no commands during calibration; afterwards: left = Repeat, right = Done
+        // Python sends no commands during calibration
+        //afterwards: left = Repeat, right = Done
         AppControler.ustawAkcje(
             up = { finish() },          // head up = back
             left = { if (finished) click(btnRepeat) },
@@ -101,7 +94,7 @@ class ConfigActivity : AppCompatActivity() {
         tone?.release()
     }
 
-    // ------------------------------------------------------------------ flow
+
 
     private fun start() {
         handler.removeCallbacksAndMessages(null)
@@ -123,7 +116,6 @@ class ConfigActivity : AppCompatActivity() {
         handler.postDelayed(checkStarted, 5000)
     }
 
-    /** If Python hasn't answered within 5 s - ask again and show a message. */
     private val checkStarted = object : Runnable {
         override fun run() {
             if (running && lastStepMs == 0L) {
@@ -135,7 +127,7 @@ class ConfigActivity : AppCompatActivity() {
         }
     }
 
-    /** Messages from Python (protocol names stay as they are: HEAD_GORA = up, HEAD_DOL = down). */
+
     private fun onStep(step: String) {
         if (!running) return
         lastStepMs = System.currentTimeMillis()
@@ -143,7 +135,7 @@ class ConfigActivity : AppCompatActivity() {
 
         val name = step.substringBefore(" ")
         val rest = step.substringAfter(" ", "")
-        val nr = rest.substringBefore("/").toIntOrNull() ?: 0      // e.g. "3/5" -> 3
+        val nr = rest.substringBefore("/").toIntOrNull() ?: 0 
 
         when (name) {
             "REST" -> {
@@ -174,7 +166,7 @@ class ConfigActivity : AppCompatActivity() {
     }
 
     private fun showResult(result: String) {
-        // e.g. "BLINK=OK HEAD=WEAK"
+
         val blink = if (result.contains("BLINK=OK")) "✓ Blink: OK" else "! Blink: too weak – blink harder"
         val head = if (result.contains("HEAD=OK")) "✓ Head moves: OK" else "! Head moves: unclear – make bigger moves"
         tvResult.text = "$blink\n$head"
@@ -196,9 +188,7 @@ class ConfigActivity : AppCompatActivity() {
         }
     }
 
-    // ------------------------------------------------------------------ look
 
-    /** Big card: optional arrow + instruction + small text under it. */
     private fun instruction(main: String, sub: String, arrow: String = "") {
         tvInstruction.text = main
         tvStep.text = sub
@@ -224,7 +214,6 @@ class ConfigActivity : AppCompatActivity() {
         drawSegments()
     }
 
-    /** done = teal, current = mustard, rest = light grey */
     private fun drawSegments() {
         if (!::segments.isInitialized) return
         for (i in 0 until segments.childCount) {
@@ -237,7 +226,7 @@ class ConfigActivity : AppCompatActivity() {
         }
     }
 
-    /** ✓ green = done, ● mustard = now, empty grey = not yet */
+
     private fun drawChecklist() {
         if (!::checklistIcons.isInitialized) return
         checklistIcons.forEachIndexed { i, icon ->
