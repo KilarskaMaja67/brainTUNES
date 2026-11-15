@@ -49,7 +49,7 @@ class SongActivity : AppCompatActivity() {
 
     private fun open_song(song_number: Int) {
         val intent = Intent(this, SongPlayActivity::class.java)
-        intent.putExtra("NUMER_PIOSENKI", song_number)   // same key as in SongPlayActivity
+        intent.putExtra("NUMBER_OF_SONG", song_number)   // MUST be the same key as in SongPlayActivity
         startActivity(intent)
     }
 

@@ -13,69 +13,69 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * EKRAN KALIBRACJI.
- * Po wejsciu kalibracja startuje SAMA (przed kalibracja gesty jeszcze nie dzialaja).
- * Python mierzy i liczy, a ten ekran pokazuje polecenia, piszczy w momencie akcji,
- * ocenia kontakt opaski i pokazuje wynik. Nowa kalibracja nadpisuje zapisana.
+ * CALIBRATION SCREEN.
+ * Calibration starts AUTOMATICALLY when the screen opens (gestures don't work before calibration).
+ * Python measures and computes; this screen shows the instructions, beeps on each action,
+ * rates the headband contact and shows the result. A new calibration overwrites the saved one.
  *
- * Po zakonczeniu:  ⬅ glowa w lewo = Powtorz,  ➡ glowa w prawo = Gotowe (albo palcem).
- * Udana kalibracja sama wraca do menu po 5 s.
+ * When finished:  ⬅ head left = Repeat,  ➡ head right = Done (or tap).
+ * A successful calibration returns to the menu automatically after 5 s.
  */
 class ConfigActivity : AppCompatActivity() {
 
-    private lateinit var tvPolaczenie: TextView
-    private lateinit var pasek: ProgressBar
-    private lateinit var tvPolecenie: TextView
-    private lateinit var tvKrok: TextView
-    private lateinit var tvKontakt: TextView
-    private lateinit var tvWynik: TextView
-    private lateinit var btnPowtorz: Button
-    private lateinit var btnGotowe: Button
+    private lateinit var tvConnection: TextView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var tvInstruction: TextView
+    private lateinit var tvStep: TextView
+    private lateinit var tvContact: TextView
+    private lateinit var tvResult: TextView
+    private lateinit var btnRepeat: Button
+    private lateinit var btnDone: Button
 
     private val handler = Handler(Looper.getMainLooper())
-    private var ton: ToneGenerator? = null
+    private var tone: ToneGenerator? = null
 
-    private var trwa = false            // kalibracja w toku
-    private var zakonczona = false      // pokazujemy wynik
-    private var ostatniKrokMs = 0L      // kiedy przyszla ostatnia wiadomosc od Pythona
+    private var running = false         // calibration in progress
+    private var finished = false        // showing the result
+    private var lastStepMs = 0L         // when the last message from Python arrived
 
-    private val ZIELONY = Color.rgb(46, 125, 50)
-    private val POMARANCZOWY = Color.rgb(230, 120, 0)
-    private val CZERWONY = Color.rgb(198, 40, 40)
+    private val GREEN = Color.rgb(46, 125, 50)
+    private val ORANGE = Color.rgb(230, 120, 0)
+    private val RED = Color.rgb(198, 40, 40)
 
-    // liczba krokow z akcja: spokoj + 5 mrugniec + 4 kierunki x 3
-    private val KROKI_RAZEM = 1 + 5 + 12
+    // number of action steps: rest + 5 blinks + 4 directions x 3
+    private val TOTAL_STEPS = 1 + 5 + 12
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_config)
 
-        tvPolaczenie = findViewById(R.id.tvPolaczenie)
-        pasek = findViewById(R.id.pasekKalibracji)
-        tvPolecenie = findViewById(R.id.tvPolecenie)
-        tvKrok = findViewById(R.id.tvKrok)
-        tvKontakt = findViewById(R.id.tvKontakt)
-        tvWynik = findViewById(R.id.tvWynik)
-        btnPowtorz = findViewById(R.id.btnPowtorz)
-        btnGotowe = findViewById(R.id.btnGotowe)
+        tvConnection = findViewById(R.id.tvConnection)
+        progressBar = findViewById(R.id.calibrationProgress)
+        tvInstruction = findViewById(R.id.tvInstruction)
+        tvStep = findViewById(R.id.tvStep)
+        tvContact = findViewById(R.id.tvContact)
+        tvResult = findViewById(R.id.tvResult)
+        btnRepeat = findViewById(R.id.btnRepeat)
+        btnDone = findViewById(R.id.btnDone)
 
-        pasek.max = KROKI_RAZEM
-        btnPowtorz.setOnClickListener { zacznij() }
-        btnGotowe.setOnClickListener { finish() }
+        progressBar.max = TOTAL_STEPS
+        btnRepeat.setOnClickListener { start() }
+        btnDone.setOnClickListener { finish() }
 
-        ton = try { ToneGenerator(AudioManager.STREAM_MUSIC, 80) } catch (e: Exception) { null }
+        tone = try { ToneGenerator(AudioManager.STREAM_MUSIC, 80) } catch (e: Exception) { null }
     }
 
     override fun onResume() {
         super.onResume()
-        AppControler.naKrokKalibracji = { onKrok(it) }
+        AppControler.naKrokKalibracji = { onStep(it) }
         // Python sends no commands during calibration; afterwards: left = Repeat, right = Done
         AppControler.ustawAkcje(
             up = { finish() },          // head up = back
-            left = { if (zakonczona) kliknij(btnPowtorz) },
-            right = { if (zakonczona) kliknij(btnGotowe) },
+            left = { if (finished) click(btnRepeat) },
+            right = { if (finished) click(btnDone) },
         )
-        if (!trwa && !zakonczona) zacznij()
+        if (!running && !finished) start()
     }
 
     override fun onPause() {
@@ -86,110 +86,111 @@ class ConfigActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
-        ton?.release()
+        tone?.release()
     }
 
-    // ------------------------------------------------------------------ przebieg
+    // ------------------------------------------------------------------ flow
 
-    private fun zacznij() {
+    private fun start() {
         handler.removeCallbacksAndMessages(null)
-        trwa = true
-        zakonczona = false
-        ostatniKrokMs = 0L
-        btnPowtorz.visibility = View.GONE
-        btnGotowe.visibility = View.GONE
-        pasek.progress = 0
-        tvKontakt.text = ""
-        tvWynik.text = ""
-        tvPolaczenie.text = ""
-        tvPolecenie.text = "Connecting to the headband…"
-        tvKrok.text = "Put on the headband and sit comfortably"
+        running = true
+        finished = false
+        lastStepMs = 0L
+        btnRepeat.visibility = View.GONE
+        btnDone.visibility = View.GONE
+        progressBar.progress = 0
+        tvContact.text = ""
+        tvResult.text = ""
+        tvConnection.text = ""
+        tvInstruction.text = "Connecting to the headband…"
+        tvStep.text = "Put on the headband and sit comfortably"
         AppControler.kalibruj()
-        handler.postDelayed(sprawdzCzyRuszylo, 5000)
+        handler.postDelayed(checkStarted, 5000)
     }
 
-    /** Jesli Python nie odpowiedzial w 5 s - ponow prosbe i pokaz komunikat. */
-    private val sprawdzCzyRuszylo = object : Runnable {
+    /** If Python hasn't answered within 5 s - ask again and show a message. */
+    private val checkStarted = object : Runnable {
         override fun run() {
-            if (trwa && ostatniKrokMs == 0L) {
-                tvPolaczenie.text = "No response from the laptop – is the Python script running?"
-                tvPolaczenie.setTextColor(CZERWONY)
+            if (running && lastStepMs == 0L) {
+                tvConnection.text = "No response from the laptop – is the Python script running?"
+                tvConnection.setTextColor(RED)
                 AppControler.kalibruj()
                 handler.postDelayed(this, 5000)
             }
         }
     }
 
-    private fun onKrok(krok: String) {
-        if (!trwa) return
-        ostatniKrokMs = System.currentTimeMillis()
-        tvPolaczenie.text = ""
+    /** Messages from Python (protocol names stay as they are: HEAD_GORA = up, HEAD_DOL = down). */
+    private fun onStep(step: String) {
+        if (!running) return
+        lastStepMs = System.currentTimeMillis()
+        tvConnection.text = ""
 
-        val nazwa = krok.substringBefore(" ")
-        val reszta = krok.substringAfter(" ", "")
-        val nr = reszta.substringBefore("/").toIntOrNull() ?: 0      // np. "3/5" -> 3
+        val name = step.substringBefore(" ")
+        val rest = step.substringAfter(" ", "")
+        val nr = rest.substringBefore("/").toIntOrNull() ?: 0      // e.g. "3/5" -> 3
 
-        when (nazwa) {
+        when (name) {
             "REST" -> {
-                polecenie("Sit still", "Look straight ahead, don't move (5 s)")
-                pasek.progress = 1
+                instruction("Sit still", "Look straight ahead, don't move (5 s)")
+                progressBar.progress = 1
             }
             "CONTACT" -> {
-                val dobry = reszta.startsWith("GOOD")
-                tvKontakt.text = if (dobry) "✅ Good headband contact"
+                val good = rest.startsWith("GOOD")
+                tvContact.text = if (good) "✅ Good headband contact"
                 else "⚠️ Weak headband contact – press it to your forehead and move your hair aside"
-                tvKontakt.setTextColor(if (dobry) ZIELONY else POMARANCZOWY)
+                tvContact.setTextColor(if (good) GREEN else ORANGE)
             }
-            "GET_READY" -> polecenie("Get ready…", "Next task in a moment")
-            "WAIT" -> tvPolecenie.text = "…rest"
-            "BLINK1" -> akcja("Blink HARD", "Blink $reszta", 1 + nr)
-            "BLINK2" -> akcja("Blink twice quickly", "Blink $reszta", 1 + nr)
-            "HEAD_L" -> akcja("⬅ Head LEFT\nand back", "Move $reszta", 6 + nr)
-            "HEAD_P" -> akcja("➡ Head RIGHT\nand back", "Move $reszta", 9 + nr)
-            "HEAD_GORA" -> akcja("⬆ Head UP\nand back", "Move $reszta", 12 + nr)
-            "HEAD_DOL" -> akcja("⬇ Head DOWN\nand back", "Move $reszta", 15 + nr)
-            "RESULT" -> pokazWynik(reszta)
-            "DONE" -> zakoncz(udana = true)
-            "FAIL" -> zakoncz(udana = false)
+            "GET_READY" -> instruction("Get ready…", "Next task in a moment")
+            "WAIT" -> tvInstruction.text = "…rest"
+            "BLINK1" -> action("Blink HARD", "Blink $rest", 1 + nr)
+            "BLINK2" -> action("Blink twice quickly", "Blink $rest", 1 + nr)
+            "HEAD_L" -> action("⬅ Head LEFT\nand back", "Move $rest", 6 + nr)
+            "HEAD_P" -> action("➡ Head RIGHT\nand back", "Move $rest", 9 + nr)
+            "HEAD_GORA" -> action("⬆ Head UP\nand back", "Move $rest", 12 + nr)
+            "HEAD_DOL" -> action("⬇ Head DOWN\nand back", "Move $rest", 15 + nr)
+            "RESULT" -> showResult(rest)
+            "DONE" -> end(success = true)
+            "FAIL" -> end(success = false)
         }
     }
 
-    private fun pokazWynik(wynik: String) {
+    private fun showResult(result: String) {
         // e.g. "BLINK=OK HEAD=WEAK"
-        val mrug = if (wynik.contains("BLINK=OK")) "✅ Blink: OK" else "⚠️ Blink: too weak – blink harder"
-        val glowa = if (wynik.contains("HEAD=OK")) "✅ Head moves: OK" else "⚠️ Head moves: unclear – make bigger moves"
-        tvWynik.text = "$mrug\n$glowa"
+        val blink = if (result.contains("BLINK=OK")) "✅ Blink: OK" else "⚠️ Blink: too weak – blink harder"
+        val head = if (result.contains("HEAD=OK")) "✅ Head moves: OK" else "⚠️ Head moves: unclear – make bigger moves"
+        tvResult.text = "$blink\n$head"
     }
 
-    private fun zakoncz(udana: Boolean) {
-        trwa = false
-        zakonczona = true
-        pasek.progress = KROKI_RAZEM
-        btnPowtorz.visibility = View.VISIBLE
-        btnGotowe.visibility = View.VISIBLE
-        if (udana) {
-            polecenie("Calibration done! ✅", "Returning to the menu in a moment…")
-            handler.postDelayed({ if (zakonczona) finish() }, 5000)
+    private fun end(success: Boolean) {
+        running = false
+        finished = true
+        progressBar.progress = TOTAL_STEPS
+        btnRepeat.visibility = View.VISIBLE
+        btnDone.visibility = View.VISIBLE
+        if (success) {
+            instruction("Calibration done! ✅", "Returning to the menu in a moment…")
+            handler.postDelayed({ if (finished) finish() }, 5000)
         } else {
-            polecenie("Calibration failed ⚠️", "Adjust the headband and repeat")
+            instruction("Calibration failed ⚠️", "Adjust the headband and repeat")
         }
     }
 
-    // ------------------------------------------------------------------ wyglad
+    // ------------------------------------------------------------------ look
 
-    private fun polecenie(glowne: String, pod: String) {
-        tvPolecenie.text = glowne
-        tvKrok.text = pod
+    private fun instruction(main: String, sub: String) {
+        tvInstruction.text = main
+        tvStep.text = sub
     }
 
-    private fun akcja(glowne: String, pod: String, postep: Int) {
-        polecenie(glowne, pod)
-        pasek.progress = postep
-        try { ton?.startTone(ToneGenerator.TONE_PROP_BEEP, 150) } catch (_: Exception) { }
+    private fun action(main: String, sub: String, progress: Int) {
+        instruction(main, sub)
+        progressBar.progress = progress
+        try { tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 150) } catch (_: Exception) { }
     }
 
-    private fun kliknij(przycisk: Button) {
-        przycisk.isPressed = true
-        handler.postDelayed({ przycisk.isPressed = false; przycisk.performClick() }, 250)
+    private fun click(button: Button) {
+        button.isPressed = true
+        handler.postDelayed({ button.isPressed = false; button.performClick() }, 250)
     }
 }

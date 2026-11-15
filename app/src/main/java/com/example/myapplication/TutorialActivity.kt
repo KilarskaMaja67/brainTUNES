@@ -10,267 +10,298 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
+/**
+ * TUTORIAL - teaches the headband gestures in 3 phases:
+ *   1. LEARN        - "Tilt your head to the RIGHT to play G" + big arrow, 2 rounds
+ *   2. RECALL       - "Play A minor", no hints (each chord 2x, random; a hint appears after 2 mistakes)
+ *   3. PROGRESSION  - C -> G -> A minor -> F in order
+ * Then a summary + "Repeat tutorial" (head RIGHT or tap). Two strong blinks at any time = back to menu.
+ *
+ * File layout:  MODEL -> STATE -> LIFECYCLE -> FLOW -> GESTURES -> UI HELPERS
+ */
 class TutorialActivity : AppCompatActivity() {
 
-    private enum class Gest(val akord: Akordy.Akord, val nazwa: String, val ruch: String, val strzalka: String) {
+    // =================================================================== MODEL
+
+    /** Head gestures and their chords - same mapping as in PlayActivity. */
+    private enum class Gesture(val chord: Akordy.Akord, val chordName: String, val move: String, val arrow: String) {
         LEFT(Akordy.Akord.C, "C", "Tilt your head to the LEFT", "⬅"),
         RIGHT(Akordy.Akord.G, "G", "Tilt your head to the RIGHT", "➡"),
         UP(Akordy.Akord.AM, "A minor", "Tilt your head UP", "⬆"),
         DOWN(Akordy.Akord.F, "F", "Tilt your head DOWN", "⬇"),
     }
 
-    private data class Krok(val faza: Int, val gest: Gest, val runda: Int = 1)
-
-    private lateinit var tvFaza: TextView
-    private lateinit var pasek: ProgressBar
-    private lateinit var tvPolecenie: TextView
-    private lateinit var tvStrzalka: TextView
-    private lateinit var tvPodpowiedz: TextView
-    private lateinit var tvFeedback: TextView
-    private lateinit var exitHintText: TextView
-    private lateinit var btnPowtorz: Button
-
-    private lateinit var akordy: Akordy
-    private val handler = Handler(Looper.getMainLooper())
-
-    private var kroki: List<Krok> = emptyList()
-    private var indeks = 0
-    private var czekam = false
-    private var koniec = false
-    private var bledy = 0
-    private var bledyWKroku = 0
-
-
-    private val CZAS_NA_DRUGIE_MRUGNIECIE_MS = 4000L
-    private var blink_counter = 0
-    private val reset_blinks_Runnable = Runnable {
-        blink_counter = 0
-        exitHintText.text = "blink twice to exit"
+    /** The three phases: header name, intro screen texts. */
+    private enum class Phase(val number: Int, val title: String, val introTitle: String, val introText: String) {
+        LEARN(
+            1, "Learn the moves", "Learn the moves",
+            "Each head move plays a different chord.\nMove and come straight back to the neutral position.\n\nTwo strong blinks = back to menu."
+        ),
+        RECALL(
+            2, "No hints", "Now without hints!",
+            "I will only show the chord name.\nDo you remember which move plays it?"
+        ),
+        PROGRESSION(
+            3, "Progression", "Play the progression",
+            "C → G → A minor → F\nThe most popular progression in pop music."
+        ),
     }
 
-    private val ZIELONY = Color.rgb(46, 125, 50)
-    private val CZERWONY = Color.rgb(198, 40, 40)
-    private val POMARANCZOWY = Color.rgb(230, 120, 0)
+    /** One task: which gesture we expect, in which phase and round. */
+    private data class Step(val phase: Phase, val gesture: Gesture, val round: Int = 1)
+
+    private companion object {
+        const val PHASE_INTRO_MS = 3000L      // phase intro screen
+        const val ROUND_INTRO_MS = 2000L      // "Round 2" screen
+        const val AFTER_SUCCESS_MS = 1200L    // pause after a correct move
+        const val HINT_AFTER_MISTAKES = 2     // phases 2-3: show a hint after this many mistakes in one step
+        const val LEARN_ROUNDS = 2
+
+        val GREEN = Color.rgb(46, 125, 50)
+        val RED = Color.rgb(198, 40, 40)
+        val ORANGE = Color.rgb(230, 120, 0)
+    }
+
+    // =================================================================== STATE
+
+    /** What the screen is doing right now - decides how gestures are handled. */
+    private enum class State { INTRO, WAITING_FOR_GESTURE, CORRECT, FINISHED }
+
+    private var state = State.INTRO
+    private var steps: List<Step> = emptyList()
+    private var index = 0
+    private var mistakes = 0
+    private var mistakesInStep = 0
+
+    private val currentStep get() = steps[index]
+
+    private val handler = Handler(Looper.getMainLooper())
+    private lateinit var chords: Akordy
+    private lateinit var blinkExit: DoubleBlinkExit
+
+    private lateinit var tvPhase: TextView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var tvInstruction: TextView
+    private lateinit var tvArrow: TextView
+    private lateinit var tvHint: TextView
+    private lateinit var tvFeedback: TextView
+    private lateinit var btnRepeat: Button
+
+    // =================================================================== LIFECYCLE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tutorial)
 
-        tvFaza = findViewById(R.id.tvFaza)
-        pasek = findViewById(R.id.pasekPostepu)
-        tvPolecenie = findViewById(R.id.tvPolecenie)
-        tvStrzalka = findViewById(R.id.tvStrzalka)
-        tvPodpowiedz = findViewById(R.id.tvPodpowiedz)
+        tvPhase = findViewById(R.id.tvPhase)
+        progressBar = findViewById(R.id.tutorialProgress)
+        tvInstruction = findViewById(R.id.tvInstruction)
+        tvArrow = findViewById(R.id.tvArrow)
+        tvHint = findViewById(R.id.tvHint)
         tvFeedback = findViewById(R.id.tvFeedback)
-        exitHintText = findViewById(R.id.exitHintText)
-        btnPowtorz = findViewById(R.id.btnPowtorz)
-        btnPowtorz.setOnClickListener { start() }
+        btnRepeat = findViewById(R.id.btnRepeat)
+        btnRepeat.setOnClickListener { startTutorial() }
 
-        akordy = Akordy(this)
-        start()
+        chords = Akordy(this)
+        blinkExit = DoubleBlinkExit(handler, findViewById(R.id.exitHintText)) { finish() }
+
+        startTutorial()
     }
 
     override fun onResume() {
         super.onResume()
         AppControler.ustawAkcje(
-            left = { onGest(Gest.LEFT) },
-            right = { onGest(Gest.RIGHT) },
-            up = { onGest(Gest.UP) },
-            down = { onGest(Gest.DOWN) },
-            blink = { blink_to_exit() },
+            left = { onGesture(Gesture.LEFT) },
+            right = { onGesture(Gesture.RIGHT) },
+            up = { onGesture(Gesture.UP) },
+            down = { onGesture(Gesture.DOWN) },
+            blink = { blinkExit.onBlink() },
         )
     }
 
-    private fun blink_to_exit() {
-        blink_counter++
-        handler.removeCallbacks(reset_blinks_Runnable)
-
-        if (blink_counter == 1) {
-            exitHintText.text = "to exit, blink once more"
-            handler.postDelayed(reset_blinks_Runnable, CZAS_NA_DRUGIE_MRUGNIECIE_MS)
-        } else if (blink_counter >= 2) {
-            finish()
-        }
-    }
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
-        akordy.free()
+        chords.free()
     }
 
+    // =================================================================== FLOW
 
-    private fun zbudujKroki(): List<Krok> {
-        val runda1 = listOf(Gest.RIGHT, Gest.LEFT, Gest.UP, Gest.DOWN)
-        var runda2 = runda1.shuffled()
-        repeat(50) {
-            if (runda2.first() != runda1.last() && runda2 != runda1) return@repeat
-            runda2 = runda1.shuffled()
-        }
-        val faza1 = runda1.map { Krok(1, it, runda = 1) } + runda2.map { Krok(1, it, runda = 2) }
-
-        var losowe = (Gest.values().toList() + Gest.values().toList()).shuffled()
-        repeat(50) {
-            if (losowe.zipWithNext().none { (a, b) -> a == b }) return@repeat
-            losowe = losowe.shuffled()
-        }
-        val faza2 = losowe.map { Krok(2, it) }
-
-        val faza3 = listOf(Gest.LEFT, Gest.RIGHT, Gest.UP, Gest.DOWN).map { Krok(3, it) }   // C G a F
-        return faza1 + faza2 + faza3
-    }
-
-    private fun start() {
+    private fun startTutorial() {
         handler.removeCallbacksAndMessages(null)
-        blink_counter = 0
-        exitHintText.text = "blink twice to exit"
-        kroki = zbudujKroki()
-        indeks = 0
-        bledy = 0
-        koniec = false
-        btnPowtorz.visibility = View.GONE
-        pasek.max = kroki.size
-        pokazWstepFazy(1)
+        blinkExit.reset()
+        steps = buildSteps()
+        index = 0
+        mistakes = 0
+        btnRepeat.visibility = View.GONE
+        progressBar.max = steps.size
+        showPhaseIntro(currentStep)
     }
 
-    private fun pokazWstepFazy(faza: Int) {
-        czekam = true
-        tvStrzalka.text = ""
-        tvFeedback.text = ""
-        tvFaza.text = nazwaFazy(kroki.first { it.faza == faza })
-        tvPolecenie.text = when (faza) {
-            1 -> "Learn the moves"
-            2 -> "Now without hints!"
-            else -> "Play the progression"
+    /** All tasks of the tutorial, in order. */
+    private fun buildSteps(): List<Step> {
+        val inOrder = listOf(Gesture.RIGHT, Gesture.LEFT, Gesture.UP, Gesture.DOWN)
+
+        // phase 1: round 1 in a fixed order, round 2 shuffled (not starting with the last move of round 1)
+        val learn = (1..LEARN_ROUNDS).flatMap { round ->
+            val order = if (round == 1) inOrder else shuffledNoRepeats(inOrder, notFirst = inOrder.last())
+            order.map { Step(Phase.LEARN, it, round) }
         }
-        tvPodpowiedz.text = when (faza) {
-            1 -> "Each head move plays a different chord.\nMove and come straight back to the neutral position.\n\nTwo strong blinks = back to menu."
-            2 -> "I will only show the chord name.\nDo you remember which move plays it?"
-            else -> "C → G → A minor → F\nThe most popular progression in pop music."
-        }
-        handler.postDelayed({ pokazKrok() }, 3000)
+        // phase 2: each gesture twice, shuffled, never the same twice in a row
+        val recall = shuffledNoRepeats(Gesture.values().toList() + Gesture.values().toList())
+            .map { Step(Phase.RECALL, it) }
+        // phase 3: C G Am F
+        val progression = listOf(Gesture.LEFT, Gesture.RIGHT, Gesture.UP, Gesture.DOWN)
+            .map { Step(Phase.PROGRESSION, it) }
+
+        return learn + recall + progression
     }
 
-    /** Krotki ekran miedzy rundami tej samej fazy. */
-    private fun pokazWstepRundy(krok: Krok) {
-        czekam = true
-        tvStrzalka.text = ""
-        tvFeedback.text = ""
-        tvFaza.text = nazwaFazy(krok)
-        tvPolecenie.text = "Round ${krok.runda}"
-        tvPodpowiedz.text = "Each move once more - this time in a different order."
-        handler.postDelayed({ pokazKrok() }, 2000)
+    /** Called after each correct move - decides what comes next. */
+    private fun goToNextStep() {
+        val previous = currentStep
+        index++
+        when {
+            index >= steps.size -> showSummary()
+            currentStep.phase != previous.phase -> showPhaseIntro(currentStep)
+            currentStep.round != previous.round -> showRoundIntro(currentStep)
+            else -> showStep()
+        }
     }
 
-    private fun pokazKrok() {
-        val krok = kroki[indeks]
-        czekam = false
-        bledyWKroku = 0
-        tvFeedback.text = ""
-        tvFaza.text = nazwaFazy(krok)
-        pasek.progress = indeks
+    private fun showPhaseIntro(step: Step) =
+        showIntro(step, step.phase.introTitle, step.phase.introText, PHASE_INTRO_MS)
 
-        val gest = krok.gest
+    private fun showRoundIntro(step: Step) =
+        showIntro(step, "Round ${step.round}", "Each move once more - this time in a different order.", ROUND_INTRO_MS)
 
-        when (krok.faza) {
-            1 -> {
-                tvPolecenie.text = "${gest.ruch}\nto play ${gest.nazwa}"
-                tvStrzalka.text = gest.strzalka
-                tvPodpowiedz.text = ""
-            }
-            2 -> {
-                tvPolecenie.text = "Play ${gest.nazwa}"
-                tvStrzalka.text = ""
-                tvPodpowiedz.text = ""
-            }
-            else -> {
-                tvPolecenie.text = "Play ${gest.nazwa}"
-                tvStrzalka.text = ""
-                tvPodpowiedz.text = postepProgresji()
-            }
+    private fun showIntro(step: Step, title: String, text: String, durationMs: Long) {
+        state = State.INTRO
+        render(header = headerFor(step), instruction = title, hint = text)
+        handler.postDelayed({ showStep() }, durationMs)
+    }
+
+    private fun showStep() {
+        state = State.WAITING_FOR_GESTURE
+        mistakesInStep = 0
+        progressBar.progress = index
+        val gesture = currentStep.gesture
+
+        when (currentStep.phase) {
+            Phase.LEARN -> render(
+                header = headerFor(currentStep),
+                instruction = "${gesture.move}\nto play ${gesture.chordName}",
+                arrow = gesture.arrow,
+            )
+            Phase.RECALL -> render(
+                header = headerFor(currentStep),
+                instruction = "Play ${gesture.chordName}",
+            )
+            Phase.PROGRESSION -> render(
+                header = headerFor(currentStep),
+                instruction = "Play ${gesture.chordName}",
+                hint = progressionStatus(),
+            )
         }
+    }
+
+    private fun showSummary() {
+        state = State.FINISHED
+        progressBar.progress = progressBar.max
+        val accuracy = 100 * steps.size / (steps.size + mistakes)
+        render(
+            header = "Done!",
+            instruction = "Tutorial completed 🎉",
+            hint = "Accuracy: $accuracy%  (mistakes: $mistakes)\n\nBlink hard twice to go back to the menu",
+        )
+        btnRepeat.visibility = View.VISIBLE
+    }
+
+    // =================================================================== GESTURES
+
+    private fun onGesture(gesture: Gesture) {
+        // every move always plays its chord - the user hears what they did
+        chords.play(gesture.chord)
+
+        when (state) {
+            State.WAITING_FOR_GESTURE ->
+                if (gesture == currentStep.gesture) onCorrect() else onMistake(gesture)
+            State.FINISHED ->
+                if (gesture == Gesture.RIGHT) pressButton(btnRepeat)      // head right = "Repeat tutorial"
+            State.INTRO, State.CORRECT -> Unit                            // ignore during transitions
+        }
+    }
+
+    private fun onCorrect() {
+        state = State.CORRECT
+        feedback("Well done! ✓  ${currentStep.gesture.chordName}", GREEN)
+        handler.postDelayed({ goToNextStep() }, AFTER_SUCCESS_MS)
+    }
+
+    private fun onMistake(played: Gesture) {
+        mistakes++
+        mistakesInStep++
+        val target = currentStep.gesture
+        when {
+            currentStep.phase == Phase.LEARN ->
+                feedback("That was ${played.chordName}. Try: ${target.move.lowercase()}", RED)
+            mistakesInStep >= HINT_AFTER_MISTAKES -> {
+                feedback("Hint: ${target.move.lowercase()}", ORANGE)
+                tvArrow.text = target.arrow
+            }
+            else ->
+                feedback("That was ${played.chordName}. Try again!", RED)
+        }
+    }
+
+    // =================================================================== UI HELPERS
+
+    /** Sets all main texts at once (anything not given is cleared). */
+    private fun render(header: String, instruction: String, arrow: String = "", hint: String = "") {
+        tvPhase.text = header
+        tvInstruction.text = instruction
+        tvArrow.text = arrow
+        tvHint.text = hint
+        tvFeedback.text = ""
+    }
+
+    private fun feedback(text: String, color: Int) {
+        tvFeedback.text = text
+        tvFeedback.setTextColor(color)
+    }
+
+    private fun headerFor(step: Step): String {
+        val base = "Phase ${step.phase.number}/${Phase.values().size} · ${step.phase.title}"
+        return if (step.phase == Phase.LEARN) "$base · round ${step.round}/$LEARN_ROUNDS" else base
     }
 
     /** e.g. "✓C → ✓G → [A minor] → F" */
-    private fun postepProgresji(): String {
-        val start3 = kroki.indexOfFirst { it.faza == 3 }
-        return kroki.drop(start3).mapIndexed { i, k ->
-            val nazwa = k.gest.nazwa
+    private fun progressionStatus(): String {
+        val first = steps.indexOfFirst { it.phase == Phase.PROGRESSION }
+        return steps.drop(first).mapIndexed { i, step ->
+            val name = step.gesture.chordName
             when {
-                start3 + i < indeks -> "✓$nazwa"
-                start3 + i == indeks -> "[$nazwa]"
-                else -> nazwa
+                first + i < index -> "✓$name"
+                first + i == index -> "[$name]"
+                else -> name
             }
         }.joinToString("  →  ")
     }
 
-    private fun nazwaFazy(krok: Krok) = when (krok.faza) {
-        1 -> "Phase 1/3 · Learn the moves · round ${krok.runda}/2"
-        2 -> "Phase 2/3 · No hints"
-        else -> "Phase 3/3 · Progression"
+    private fun pressButton(button: Button) {
+        button.isPressed = true
+        handler.postDelayed({ button.isPressed = false; button.performClick() }, 250)
     }
 
-
-    private fun onGest(gest: Gest) {
-        akordy.play(gest.akord)
-
-        if (koniec) {
-            if (gest == Gest.RIGHT) {
-                btnPowtorz.isPressed = true
-                handler.postDelayed({ btnPowtorz.isPressed = false; btnPowtorz.performClick() }, 250)
-            }
-            return
+    /** Shuffles until no item repeats twice in a row, the order differs from the input and doesn't start with [notFirst]. */
+    private fun <T> shuffledNoRepeats(items: List<T>, notFirst: T? = null): List<T> {
+        repeat(50) {
+            val candidate = items.shuffled()
+            val ok = candidate.zipWithNext().none { (a, b) -> a == b } &&
+                    candidate != items &&
+                    candidate.first() != notFirst
+            if (ok) return candidate
         }
-        if (czekam) return
-        val krok = kroki[indeks]
-        val cel = krok.gest
-
-        if (gest == cel) {
-            sukces()
-            return
-        }
-
-        bledy++
-        bledyWKroku++
-        if (krok.faza == 1) {
-            feedback("That was ${gest.nazwa}. Try: ${cel.ruch.lowercase()}", CZERWONY)
-        } else if (bledyWKroku >= 2) {
-            feedback("Hint: ${cel.ruch.lowercase()}", POMARANCZOWY)
-            tvStrzalka.text = cel.strzalka
-        } else {
-            feedback("That was ${gest.nazwa}. Try again!", CZERWONY)
-        }
-    }
-
-    private fun sukces() {
-        czekam = true
-        feedback("Well done! ✓  ${kroki[indeks].gest.nazwa}", ZIELONY)
-        handler.postDelayed({
-            indeks++
-            when {
-                indeks >= kroki.size -> zakoncz()
-                kroki[indeks].faza != kroki[indeks - 1].faza -> pokazWstepFazy(kroki[indeks].faza)
-                kroki[indeks].runda != kroki[indeks - 1].runda -> pokazWstepRundy(kroki[indeks])
-                else -> pokazKrok()
-            }
-        }, 1200)
-    }
-
-    private fun zakoncz() {
-        koniec = true
-        pasek.progress = pasek.max
-        val zadania = kroki.size
-        val trafnosc = 100 * zadania / (zadania + bledy)
-        tvFaza.text = "Done!"
-        tvPolecenie.text = "Tutorial completed 🎉"
-        tvStrzalka.text = ""
-        tvPodpowiedz.text = "Accuracy: $trafnosc%  (mistakes: $bledy)\n\nBlink hard twice to go back to the menu"
-        feedback("", ZIELONY)
-        btnPowtorz.visibility = View.VISIBLE
-    }
-
-
-    private fun feedback(tekst: String, kolor: Int) {
-        tvFeedback.text = tekst
-        tvFeedback.setTextColor(kolor)
+        return items.shuffled()
     }
 }

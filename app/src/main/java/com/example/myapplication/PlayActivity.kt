@@ -86,6 +86,7 @@ class PlayActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacks(reset_blinks_Runnable)
         akordy.free()
     }
 }
