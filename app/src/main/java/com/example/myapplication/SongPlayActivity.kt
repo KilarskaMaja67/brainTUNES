@@ -21,36 +21,21 @@ data class SongLine(
     val chord_hint: String
 )
 
-/** One chord tile on the lane: when it should be played and which chord. */
 private data class LaneTile(
     val time_ms: Int,
     val chord: Akordy.Akord,
     val view: TextView
 )
 
-/**
- * PLAY ALONG
- *  - chord LANE: tiles slide to the left; a chord should be played when its tile reaches the "now" zone.
- *    Moved every screen frame (Choreographer) with translationX only -> smooth, no relayout.
- *  - LYRICS: separate from the chords - the whole line changes with a short fade (no scrolling text).
- *  - COMBO: playing the right chord in time adds +1, a wrong chord resets it.
- *  - chord cross at the bottom: head left = C, right = G, up = a, down = F; played chord gets a ring.
- */
 class SongPlayActivity : AppCompatActivity() {
 
     private companion object {
-        const val LANE_SPEED_DP_PER_S = 110f   // how fast tiles move (bigger = more space between chords)
+        const val LANE_SPEED_DP_PER_S = 110f   
         const val TILE_DP = 52f
-        const val EARLY_MS = 400               // a chord played up to 0.4 s before its tile arrives still counts
+        const val EARLY_MS = 400               
         const val FADE_MS = 140L
 
-        /**
-         * SYNC: the phone/emulator plays the sound a bit LATER than MediaPlayer reports
-         * (audio buffer). We move the tiles + lyrics back by this many ms so they match what you HEAR.
-         *   tiles reach the line BEFORE you hear the chord change -> make it BIGGER (e.g. 300)
-         *   tiles reach the line AFTER you hear it                 -> make it SMALLER (e.g. 50)
-         * Emulator usually needs ~200-350, a real phone ~50-150.
-         */
+       
         const val SYNC_OFFSET_MS = 250
     }
 
@@ -72,21 +57,20 @@ class SongPlayActivity : AppCompatActivity() {
 
     private lateinit var akordy: Akordy
     private var media_player: MediaPlayer? = null
-    private var paused_by_app = false          // true = we paused the song in onPause (e.g. Home button)
+    private var paused_by_app = false          
     private var current_script: List<SongLine> = emptyList()
 
     private val lane_tiles = mutableListOf<LaneTile>()
     private var px_per_ms = 0f
-    private var active_line_index = -2         // -2 = nothing shown yet
+    private var active_line_index = -2         
 
     private var combo = 0
-    private var last_scored_tile_ms = -1       // each tile can be scored only once
+    private var last_scored_tile_ms = -1       
 
-    // smooth clock: MediaPlayer.currentPosition jumps in steps on many phones, so we fill the gaps
     private var last_reported_ms = -1
     private var last_reported_at = 0L
     private var shown_ms = 0
-    private var visual_ms = 0                  // song time that is shown on screen (= what you hear)
+    private var visual_ms = 0                  
 
     private var blink_counter = 0
     private val handler = Handler(Looper.getMainLooper())
@@ -96,7 +80,7 @@ class SongPlayActivity : AppCompatActivity() {
         exitHintText.text = "blink twice to exit"
     }
 
-    // called once per screen frame (~60x per second) while the screen is visible
+
     private var frames_running = false
     private val frame_callback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
@@ -134,7 +118,7 @@ class SongPlayActivity : AppCompatActivity() {
 
         px_per_ms = dp(LANE_SPEED_DP_PER_S) / 1000f
 
-        val song_number = intent.getIntExtra("NUMBER_OF_SONG", 1)   // MUST be the same key as in SongActivity
+        val song_number = intent.getIntExtra("NUMBER_OF_SONG", 1)   
         load_song(song_number)
 
         CdurBtn.setOnClickListener { play_chord(Akordy.Akord.C) }
@@ -143,7 +127,6 @@ class SongPlayActivity : AppCompatActivity() {
         FdurBtn.setOnClickListener { play_chord(Akordy.Akord.F) }
     }
 
-    // ------------------------------------------------------------------ chords + combo
 
     private fun play_chord(chord: Akordy.Akord) {
         akordy.play(chord)
@@ -151,7 +134,6 @@ class SongPlayActivity : AppCompatActivity() {
         score(chord)
     }
 
-    /** Right chord for the current (or just arriving) tile = combo +1, wrong chord = combo 0. */
     private fun score(played: Akordy.Akord) {
         val expected = lane_tiles.lastOrNull { it.time_ms <= visual_ms + EARLY_MS } ?: return
         if (expected.chord == played) {
@@ -168,9 +150,6 @@ class SongPlayActivity : AppCompatActivity() {
         tvCombo.text = if (combo >= 2) "🔥 Combo × $combo" else " "
     }
 
-    // ------------------------------------------------------------------ building the lane
-
-    /** One tile for every chord CHANGE in the .lrc file. */
     private fun build_lane() {
         lane_tiles.forEach { chordLane.removeView(it.view) }
         lane_tiles.clear()
@@ -197,7 +176,6 @@ class SongPlayActivity : AppCompatActivity() {
         }
     }
 
-    // ------------------------------------------------------------------ every frame
 
     private fun on_frame() {
         val mp = media_player ?: return
@@ -209,7 +187,6 @@ class SongPlayActivity : AppCompatActivity() {
         songProgress.progress = now_ms
     }
 
-    /** Position of the song in ms that moves smoothly every frame and never jumps back. */
     private fun smooth_position(mp: MediaPlayer): Int {
         if (!mp.isPlaying) return shown_ms
         val now = SystemClock.uptimeMillis()
@@ -219,12 +196,11 @@ class SongPlayActivity : AppCompatActivity() {
             last_reported_at = now
         }
         var estimate = last_reported_ms + (now - last_reported_at).toInt()
-        estimate = estimate.coerceAtMost(reported + 250)   // don't run away if the player stalls
+        estimate = estimate.coerceAtMost(reported + 250)   
         if (estimate > shown_ms) shown_ms = estimate
         return shown_ms
     }
 
-    /** Only translationX changes - this is what makes it smooth. */
     private fun update_lane(now_ms: Int) {
         val lane_width = chordLane.width
         if (lane_width == 0) return
@@ -239,18 +215,16 @@ class SongPlayActivity : AppCompatActivity() {
             }
             if (tile.view.visibility != View.VISIBLE) tile.view.visibility = View.VISIBLE
             tile.view.translationX = x
-            tile.view.alpha = if (tile.time_ms < now_ms - 600) 0.35f else 1f   // already passed = faded
+            tile.view.alpha = if (tile.time_ms < now_ms - 600) 0.35f else 1f   
         }
     }
-
-    /** Lyrics change only when the line changes: whole line fades out and the new one fades in. */
     private fun update_lyrics(now_ms: Int) {
         if (current_script.isEmpty()) return
         val index = current_script.indexOfLast { now_ms >= it.time_ms }
         if (index == active_line_index) return
         active_line_index = index
         if (index >= 0) {
-            // Logcat (filter "Sync"): how late the line changed compared to the .lrc - should be 0-20 ms
+
             Log.d("Sync", "line ${index + 1} '${current_script[index].lyrics}' lrc=${current_script[index].time_ms} shown=$now_ms")
         }
 
@@ -269,10 +243,9 @@ class SongPlayActivity : AppCompatActivity() {
         }.start()
     }
 
-    // ------------------------------------------------------------------ song loading (as before)
 
     private fun load_song(song_number: Int) {
-        // title, backing track (.mp3), lyrics + chords (.lrc) - both files in res/raw
+
         val (title, audio_res_id, lrc_res_id) = when (song_number) {
             1 -> Triple("Zawsze tam gdzie ty", R.raw.zawsze_tam_gdzie_ty_m, R.raw.zawsze_tam_gdzie_ty)
             2 -> Triple("When I'm Gone", R.raw.cups_m, R.raw.cups)
@@ -325,11 +298,10 @@ class SongPlayActivity : AppCompatActivity() {
         return result.sortedBy { it.time_ms }
     }
 
-    // ------------------------------------------------------------------ lifecycle
 
     override fun onPause() {
         super.onPause()
-        // stop the backing track when the screen disappears (Home button, other app) - otherwise it keeps playing
+
         if (media_player?.isPlaying == true) {
             media_player?.pause()
             paused_by_app = true
@@ -340,12 +312,12 @@ class SongPlayActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // resume the backing track if we paused it in onPause
+
         if (paused_by_app) {
             media_player?.start()
             paused_by_app = false
         }
-        last_reported_ms = -1   // restart the smooth clock from the real position
+        last_reported_ms = -1  
         if (!frames_running) {
             frames_running = true
             Choreographer.getInstance().postFrameCallback(frame_callback)
