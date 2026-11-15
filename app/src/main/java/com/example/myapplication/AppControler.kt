@@ -8,23 +8,18 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-/**
- * Laczy opaske (komendy z Pythona) z aktualnym ekranem.
- * Kazdy ekran w onResume() woła ustawAkcje(...) - to, czego nie poda, nic nie robi.
- */
+
 object AppControler {
 
-    // akcje aktualnego ekranu (ustawiane TYLKO przez ustawAkcje)
     private var left: (() -> Unit)? = null
     private var right: (() -> Unit)? = null
     private var up: (() -> Unit)? = null
     private var down: (() -> Unit)? = null
     private var blink: (() -> Unit)? = null
 
-    // ekran kalibracji (ConfigActivity) dostaje tu kolejne kroki: "BLINK1 1/5", "HEAD_L 2/3", "CONTACT GOOD 25", "DONE"...
+
     var naKrokKalibracji: ((String) -> Unit)? = null
 
-    // wolane, gdy laptop zglosi, ze NIE ma zapisanej kalibracji (MainActivity otwiera wtedy ekran kalibracji)
     var naBrakKalibracji: (() -> Unit)? = null
 
     fun ustawAkcje(
@@ -41,11 +36,9 @@ object AppControler {
         this.blink = blink
     }
 
-    // ---------- polaczenie z opaska (laptop z Pythonem) ----------
     private var eeg: EegReceiver? = null
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)   // akcje wykonuja sie na watku UI
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)  
 
-    /** Uruchom raz (w MainActivity.onCreate). Kolejne wywolania nic nie robia. */
     fun start(laptopIp: String) {
         if (eeg != null) return
         val receiver = EegReceiver(laptopIp = laptopIp)
@@ -65,19 +58,18 @@ object AppControler {
                         EegCommand.DOUBLE_BLINK, EegCommand.BLINK -> blink?.invoke()
                     }
                     is EegEvent.Calibration -> naKrokKalibracji?.invoke(event.step)
-                    is EegEvent.Unknown -> { /* ignorujemy */ }
+                    is EegEvent.Unknown -> {  }
                 }
             }
         }
     }
 
-    /** Czy laptop z Pythonem odpowiada (np. do pokazania statusu na ekranie). */
     fun czyPolaczono(): Boolean = eeg?.connected?.value == true
 
-    /** null = jeszcze nie wiadomo (laptop nie odpowiedzial), true/false = czy jest zapisana kalibracja. */
+
     fun czySkalibrowano(): Boolean? = eeg?.calibrated?.value
 
-    /** Popros skrypt Pythona o (ponowna) kalibracje - nadpisuje zapisana. */
+
     fun kalibruj() {
         eeg?.requestCalibration()
     }

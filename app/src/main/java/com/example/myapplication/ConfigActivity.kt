@@ -13,15 +13,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
-/**
- * CALIBRATION SCREEN.
- * Calibration starts AUTOMATICALLY when the screen opens (gestures don't work before calibration).
- * Python measures and computes; this screen shows the instructions, beeps on each action,
- * rates the headband contact and shows the result. A new calibration overwrites the saved one.
- *
- * When finished: head UP/DOWN = choose Repeat or Done, head RIGHT = press it (or tap).
- * A successful calibration returns to the menu automatically after 5 s.
- */
+
 class ConfigActivity : AppCompatActivity() {
 
     private lateinit var tvConnection: TextView
@@ -87,12 +79,12 @@ class ConfigActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         AppControler.naKrokKalibracji = { onStep(it) }
-        // Python sends no commands during calibration; afterwards: left = Repeat, right = Done
-        // Python sends no commands during calibration; afterwards: up/down = choose button, right = press it
+        // Python sends no commands during calibration
+        //afterwards: left = Repeat, right = Done
         AppControler.ustawAkcje(
-            up = { if (finished) select(0) },
-            down = { if (finished) select(1) },
-            right = { if (finished) click(if (selectedButton == 0) btnRepeat else btnDone) },
+            up = { finish() },          // head up = back
+            left = { if (finished) click(btnRepeat) },
+            right = { if (finished) click(btnDone) },
         )
         if (!running && !finished) start()
     }
@@ -175,10 +167,10 @@ class ConfigActivity : AppCompatActivity() {
             "WAIT" -> tvInstruction.text = "…rest"
             "BLINK1" -> { stage = 1; action("Blink HARD", "Blink $rest", 1 + nr) }
             "BLINK2" -> { stage = 1; action("Blink twice quickly", "Blink $rest", 1 + nr) }
-            "HEAD_L" -> { stage = 2; action("Head LEFT\nand back", "Move $rest", 6 + nr, R.drawable.brain_left) }
-            "HEAD_P" -> { stage = 2; action("Head RIGHT\nand back", "Move $rest", 9 + nr, R.drawable.brain_right) }
-            "HEAD_GORA" -> { stage = 2; action("Head UP\nand back", "Move $rest", 12 + nr, R.drawable.brain_up) }
-            "HEAD_DOL" -> { stage = 2; action("Head DOWN\nand back", "Move $rest", 15 + nr, R.drawable.brain_down) }
+            "HEAD_L" -> { stage = 2; action("Head LEFT\nand back", "Move $rest", 6 + nr, "⬅") }
+            "HEAD_P" -> { stage = 2; action("Head RIGHT\nand back", "Move $rest", 9 + nr, "➡") }
+            "HEAD_GORA" -> { stage = 2; action("Head UP\nand back", "Move $rest", 12 + nr, "⬆") }
+            "HEAD_DOL" -> { stage = 2; action("Head DOWN\nand back", "Move $rest", 15 + nr, "⬇") }
             "RESULT" -> showResult(rest)
             "DONE" -> end(success = true)
             "FAIL" -> end(success = false)
@@ -199,12 +191,10 @@ class ConfigActivity : AppCompatActivity() {
         if (success) stage = 3
         btnRepeat.visibility = View.VISIBLE
         btnDone.visibility = View.VISIBLE
-        checklist.visibility = View.GONE
-        updateButtons(if (success) 1 else 0)            // success -> "Done" selected, failure -> "Repeat"
-        tvBottomHint.text = "⬆ ⬇  choose   ·   ➡  press"
+        tvBottomHint.text = "⬅  repeat   ·   ➡  done"
         if (success) {
-            instruction("Calibration done!", "Returning to the menu in a moment…", R.drawable.brain_music)
-            handler.postDelayed(autoClose, 5000)
+            instruction("Calibration done!", "Returning to the menu in a moment…")
+            handler.postDelayed({ if (finished) finish() }, 5000)
         } else {
             instruction("Calibration failed", "Adjust the headband and repeat")
         }
@@ -212,16 +202,15 @@ class ConfigActivity : AppCompatActivity() {
 
     // ------------------------------------------------------------------ look
 
-    /** Big card: brain picture + instruction + small text under it. Default picture = brain with the headband. */
-    private fun instruction(main: String, sub: String, image: Int = R.drawable.brain_config) {
+    private fun instruction(main: String, sub: String, arrow: String = "") {
         tvInstruction.text = main
         tvStep.text = sub
-        ivGesture.setImageResource(image)
-        tvArrow.visibility = View.GONE
+        tvArrow.text = arrow
+        tvArrow.visibility = if (arrow.isEmpty()) View.GONE else View.VISIBLE
     }
 
-    private fun action(main: String, sub: String, progress: Int, image: Int = R.drawable.brain_config) {
-        instruction(main, sub, image)
+    private fun action(main: String, sub: String, progress: Int, arrow: String = "") {
+        instruction(main, sub, arrow)
         calProgress = progress
         try { tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 150) } catch (_: Exception) { }
     }
@@ -238,7 +227,6 @@ class ConfigActivity : AppCompatActivity() {
         drawSegments()
     }
 
-    /** done = teal, current = mustard, rest = light grey */
     private fun drawSegments() {
         if (!::segments.isInitialized) return
         for (i in 0 until segments.childCount) {

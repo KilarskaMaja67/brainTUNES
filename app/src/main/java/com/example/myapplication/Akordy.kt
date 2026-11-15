@@ -8,16 +8,6 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Button
 
-/**
- * Shared chord player (Play, SongPlay, Tutorial).
- *
- * - Sounds are loaded ONCE for the whole app (on first use) and stay in memory,
- *   so every next screen plays them immediately - no "still loading" silence.
- * - A new chord smoothly fades out the previous one (like on a guitar) instead of overlapping,
- *   so SoundPool never runs out of streams and never cuts sounds off in the middle.
- *
- * Usage: Akordy(this), akordy.play(Akordy.Akord.C), akordy.free()
- */
 class Akordy(context: Context) {
 
     enum class Akord { C, G, AM, F }
@@ -28,13 +18,12 @@ class Akordy(context: Context) {
 
     fun play(akord: Akord) = Shared.play(akord)
 
-    /** Does nothing on purpose - sounds stay in memory for the whole app (no reloading per screen). */
+
     fun free() {}
 
-    /** Old name, kept so older code still compiles. */
     fun zwolnij() = free()
 
-    // ---------- one SoundPool for the whole app ----------
+    //one spindpool for app
     private object Shared {
         const val STOP_PREVIOUS = true      // false = chords overlap
         const val FADE_MS = 120L            // how fast the previous chord fades out
@@ -79,7 +68,6 @@ class Akordy(context: Context) {
             lastStream = sp.play(id, 1.0f, 1.0f, 1, 0, 1.0f)
         }
 
-        /** Smooth fade-out (no "click" like an abrupt stop). */
         private fun fadeOut(sp: SoundPool, streamId: Int) {
             if (streamId == 0) return
             val steps = 6
@@ -100,7 +88,7 @@ class Akordy(context: Context) {
     }
 }
 
-/** Short "press" animation for a button. */
+// animation for buton
 fun Button.animation_click() {
     animate()
         .scaleX(1.08f)
