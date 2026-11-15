@@ -17,7 +17,6 @@ class MainActivity : AppCompatActivity() {
     //lista with 4 buttons from XML
     private lateinit var list_buttons: List<Button>
 
-    // "Headband connected" pill at the top (checked every second)
     private lateinit var tvConnection: TextView
     private val handler = Handler(Looper.getMainLooper())
     private val check_connection_Runnable = object : Runnable {
@@ -45,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         list_buttons = listOf(configBtn, tutorialBtn, playBtn, songBtn)
         tvConnection = findViewById(R.id.tvConnection)
 
-        // FINGER-TAP HANDLING (works now and also serves as a fallback)
+
         configBtn.setOnClickListener {
             selected_index = 0
             updateLook()
@@ -73,7 +72,6 @@ class MainActivity : AppCompatActivity() {
         updateLook()
     }
 
-    // first launch (no calibration saved on the laptop) -> open the calibration screen automatically
     private var openingCalibration = false
 
     private fun openCalibrationIfNeeded() {
@@ -120,7 +118,7 @@ class MainActivity : AppCompatActivity() {
     // change how picked button looks
     private fun updateLook() {
         list_buttons.forEachIndexed { index, button ->
-            button.setSelectedLook(index == selected_index)   // ring + bigger / dimmed (BrainUi.kt)
+            button.setSelectedLook(index == selected_index)  
         }
     }
 
