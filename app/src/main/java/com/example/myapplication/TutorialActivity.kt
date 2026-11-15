@@ -95,7 +95,7 @@ class TutorialActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
-        akordy.zwolnij()
+        akordy.free()
     }
 
 

@@ -13,13 +13,13 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * CALIBRATION SCREEN.
- * Calibration starts AUTOMATICALLY when the screen opens (gestures don't work before calibration).
- * Python measures and computes; this screen shows the instructions, beeps on each action,
- * rates the headband contact and shows the result. A new calibration overwrites the saved one.
+ * EKRAN KALIBRACJI.
+ * Po wejsciu kalibracja startuje SAMA (przed kalibracja gesty jeszcze nie dzialaja).
+ * Python mierzy i liczy, a ten ekran pokazuje polecenia, piszczy w momencie akcji,
+ * ocenia kontakt opaski i pokazuje wynik. Nowa kalibracja nadpisuje zapisana.
  *
- * When finished:  ⬅ head left = Repeat,  ➡ head right = Done (or tap).
- * A successful calibration returns to the menu automatically after 5 s.
+ * Po zakonczeniu:  ⬅ glowa w lewo = Powtorz,  ➡ glowa w prawo = Gotowe (albo palcem).
+ * Udana kalibracja sama wraca do menu po 5 s.
  */
 class ConfigActivity : AppCompatActivity() {
 
