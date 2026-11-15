@@ -9,8 +9,8 @@
 
     <Button
         android:id="@+id/GdurBtn"
-        android:layout_width="125dp"
-        android:layout_height="125dp"
+        android:layout_width="135dp"
+        android:layout_height="135dp"
         android:gravity="center"
         android:text="G"
         android:textSize="50sp"
@@ -18,15 +18,14 @@
         app:cornerRadius="35dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.93"
+        app:layout_constraintHorizontal_bias="0.989"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.493" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/AmolBtn"
-        android:layout_width="125dp"
-        android:layout_height="125dp"
+        android:layout_width="135dp"
+        android:layout_height="135dp"
         android:gravity="center"
         android:text="a"
         android:textSize="50sp"
@@ -34,15 +33,14 @@
         app:cornerRadius="35dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.493"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.287" />
+        app:layout_constraintVertical_bias="0.25" />
 
     <Button
         android:id="@+id/FdurBtn"
-        android:layout_width="125dp"
-        android:layout_height="125dp"
+        android:layout_width="135dp"
+        android:layout_height="135dp"
         android:gravity="center"
         android:text="F"
         android:textSize="50sp"
@@ -52,12 +50,12 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.699" />
+        app:layout_constraintVertical_bias="0.726" />
 
     <Button
         android:id="@+id/CdurBtn"
-        android:layout_width="125dp"
-        android:layout_height="125dp"
+        android:layout_width="135dp"
+        android:layout_height="135dp"
         android:gravity="center"
         android:text="C"
         android:textSize="50sp"
@@ -65,7 +63,7 @@
         app:cornerRadius="35dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.055"
+        app:layout_constraintHorizontal_bias="0.01"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.493" />
