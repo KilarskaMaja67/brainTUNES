@@ -12,20 +12,10 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
-/**
- * TUTORIAL - teaches the headband gestures in 3 phases:
- *   1. LEARN        - "Tilt your head to the RIGHT to play G" + big arrow, 2 rounds
- *   2. RECALL       - "Play A minor", no hints (each chord 2x, random; a hint appears after 2 mistakes)
- *   3. PROGRESSION  - C -> G -> A minor -> F in order
- * Then a summary + "Repeat tutorial" (head RIGHT or tap). Two strong blinks at any time = back to menu.
- *
- * File layout:  MODEL -> STATE -> LIFECYCLE -> FLOW -> GESTURES -> UI HELPERS
- */
+
 class TutorialActivity : AppCompatActivity() {
 
-    // =================================================================== MODEL
 
-    /** Head gestures and their chords - same mapping as in PlayActivity. */
     private enum class Gesture(val chord: Akordy.Akord, val chordName: String, val move: String, val arrow: String, val image: Int) {
         LEFT(Akordy.Akord.C, "C", "Tilt your head to the LEFT", "⬅", R.drawable.brain_left),
         RIGHT(Akordy.Akord.G, "G", "Tilt your head to the RIGHT", "➡", R.drawable.brain_right),
@@ -33,7 +23,6 @@ class TutorialActivity : AppCompatActivity() {
         DOWN(Akordy.Akord.F, "F", "Tilt your head DOWN", "⬇", R.drawable.brain_down),
     }
 
-    /** The three phases: header name, intro screen texts. */
     private enum class Phase(val number: Int, val title: String, val introTitle: String, val introText: String) {
         LEARN(
             1, "Learn the moves", "Learn the moves",
@@ -49,14 +38,13 @@ class TutorialActivity : AppCompatActivity() {
         ),
     }
 
-    /** One task: which gesture we expect, in which phase and round. */
     private data class Step(val phase: Phase, val gesture: Gesture, val round: Int = 1)
 
     private companion object {
-        const val PHASE_INTRO_MS = 3000L      // phase intro screen
-        const val ROUND_INTRO_MS = 2000L      // "Round 2" screen
-        const val AFTER_SUCCESS_MS = 1200L    // pause after a correct move
-        const val HINT_AFTER_MISTAKES = 2     // phases 2-3: show a hint after this many mistakes in one step
+        const val PHASE_INTRO_MS = 3000L      
+        const val ROUND_INTRO_MS = 2000L      
+        const val AFTER_SUCCESS_MS = 1200L    
+        const val HINT_AFTER_MISTAKES = 2     
         const val LEARN_ROUNDS = 2
 
         val GREEN = Color.rgb(79, 138, 91)
@@ -66,9 +54,6 @@ class TutorialActivity : AppCompatActivity() {
         const val LEARN_BUBBLE = "Tilt and come straight back to the middle!"
     }
 
-    // =================================================================== STATE
-
-    /** What the screen is doing right now - decides how gestures are handled. */
     private enum class State { INTRO, WAITING_FOR_GESTURE, CORRECT, FINISHED }
 
     private var state = State.INTRO
@@ -93,9 +78,8 @@ class TutorialActivity : AppCompatActivity() {
     private lateinit var bubbleRow: LinearLayout
     private lateinit var rowToPlay: LinearLayout
     private lateinit var tvChordChip: TextView
-    private lateinit var ivGesture: ImageView      // brain picture of the head move
+    private lateinit var ivGesture: ImageView      
 
-    // =================================================================== LIFECYCLE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,7 +121,7 @@ class TutorialActivity : AppCompatActivity() {
         chords.free()
     }
 
-    // =================================================================== FLOW
+
 
     private fun startTutorial() {
         handler.removeCallbacksAndMessages(null)
@@ -150,26 +134,25 @@ class TutorialActivity : AppCompatActivity() {
         showPhaseIntro(currentStep)
     }
 
-    /** All tasks of the tutorial, in order. */
+
     private fun buildSteps(): List<Step> {
         val inOrder = listOf(Gesture.RIGHT, Gesture.LEFT, Gesture.UP, Gesture.DOWN)
 
-        // phase 1: round 1 in a fixed order, round 2 shuffled (not starting with the last move of round 1)
         val learn = (1..LEARN_ROUNDS).flatMap { round ->
             val order = if (round == 1) inOrder else shuffledNoRepeats(inOrder, notFirst = inOrder.last())
             order.map { Step(Phase.LEARN, it, round) }
         }
-        // phase 2: each gesture twice, shuffled, never the same twice in a row
+
         val recall = shuffledNoRepeats(Gesture.values().toList() + Gesture.values().toList())
             .map { Step(Phase.RECALL, it) }
-        // phase 3: C G Am F
+
         val progression = listOf(Gesture.LEFT, Gesture.RIGHT, Gesture.UP, Gesture.DOWN)
             .map { Step(Phase.PROGRESSION, it) }
 
         return learn + recall + progression
     }
 
-    /** Called after each correct move - decides what comes next. */
+ 
     private fun goToNextStep() {
         val previous = currentStep
         index++
@@ -202,10 +185,10 @@ class TutorialActivity : AppCompatActivity() {
         when (currentStep.phase) {
             Phase.LEARN -> render(
                 header = headerFor(currentStep),
-                instruction = gesture.move.replace(" to the ", "\nto the "),   // "Tilt your head\nto the RIGHT"
+                instruction = gesture.move.replace(" to the ", "\nto the "),   
                 arrow = gesture.arrow,
                 hint = LEARN_BUBBLE,
-                chord = gesture,                                                // "to play [G]"
+                chord = gesture,                                           
             )
             Phase.RECALL -> render(
                 header = headerFor(currentStep),
@@ -231,18 +214,18 @@ class TutorialActivity : AppCompatActivity() {
         btnRepeat.visibility = View.VISIBLE
     }
 
-    // =================================================================== GESTURES
+
 
     private fun onGesture(gesture: Gesture) {
-        // every move always plays its chord - the user hears what they did
+
         chords.play(gesture.chord)
 
         when (state) {
             State.WAITING_FOR_GESTURE ->
                 if (gesture == currentStep.gesture) onCorrect() else onMistake(gesture)
             State.FINISHED ->
-                if (gesture == Gesture.RIGHT) pressButton(btnRepeat)      // head right = "Repeat tutorial"
-            State.INTRO, State.CORRECT -> Unit                            // ignore during transitions
+                if (gesture == Gesture.RIGHT) pressButton(btnRepeat)     
+            State.INTRO, State.CORRECT -> Unit                            
         }
     }
 
@@ -268,9 +251,7 @@ class TutorialActivity : AppCompatActivity() {
         }
     }
 
-    // =================================================================== UI HELPERS
 
-    /** Sets all main texts at once (anything not given is cleared / hidden). */
     private fun render(
         header: String,
         instruction: String,
@@ -280,7 +261,7 @@ class TutorialActivity : AppCompatActivity() {
     ) {
         tvPhase.text = header
         tvInstruction.text = instruction
-        // phase 1: the brain picture shows the move (instead of a text arrow)
+
         if (chord != null) {
             showGesture(chord)
         } else {
@@ -289,11 +270,10 @@ class TutorialActivity : AppCompatActivity() {
             tvArrow.visibility = if (arrow.isEmpty()) View.GONE else View.VISIBLE
         }
 
-        // speech bubble only when there is something to say
+
         tvHint.text = hint
         bubbleRow.visibility = if (hint.isEmpty()) View.GONE else View.VISIBLE
 
-        // "to play [G]" chip in the chord's colour (phase 1 only)
         if (chord != null) {
             tvChordChip.text = chord.chord.label
             tvChordChip.background = roundedBg(chordColor(chord.chord), 12f)
@@ -304,7 +284,7 @@ class TutorialActivity : AppCompatActivity() {
         tvFeedback.text = ""
     }
 
-    /** Brain picture of the head move (left / right / up / down). */
+
     private fun showGesture(gesture: Gesture) {
         ivGesture.setImageResource(gesture.image)
         ivGesture.visibility = View.VISIBLE
@@ -319,7 +299,6 @@ class TutorialActivity : AppCompatActivity() {
     private fun headerFor(step: Step): String =
         "Phase ${step.phase.number}/${Phase.values().size} · ${step.phase.title}"
 
-    /** e.g. "✓C → ✓G → [A minor] → F" */
     private fun progressionStatus(): String {
         val first = steps.indexOfFirst { it.phase == Phase.PROGRESSION }
         return steps.drop(first).mapIndexed { i, step ->
@@ -337,7 +316,6 @@ class TutorialActivity : AppCompatActivity() {
         handler.postDelayed({ button.isPressed = false; button.performClick() }, 250)
     }
 
-    /** Shuffles until no item repeats twice in a row, the order differs from the input and doesn't start with [notFirst]. */
     private fun <T> shuffledNoRepeats(items: List<T>, notFirst: T? = null): List<T> {
         repeat(50) {
             val candidate = items.shuffled()
