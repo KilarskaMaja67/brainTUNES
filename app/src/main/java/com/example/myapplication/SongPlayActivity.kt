@@ -137,14 +137,14 @@ class SongPlayActivity : AppCompatActivity() {
 
             val lyrics_tv = TextView(this).apply {
                 text = line.lyrics
-                textSize = 18f
+                textSize = 24f
                 setTypeface(null, Typeface.BOLD)
                 maxLines = 1
             }
 
             val chord_tv = TextView(this).apply {
                 text = line.chord_hint
-                textSize = 16f
+                textSize = 20f
                 setTypeface(null, Typeface.BOLD)
                 setTextColor(get_chord_color(line.chord_hint))
                 maxLines = 1
@@ -168,8 +168,8 @@ class SongPlayActivity : AppCompatActivity() {
         val start_chord = item.chord_tv.textSize / resources.displayMetrics.scaledDensity
         val start_alpha = item.block.alpha
 
-        val target_lyrics = if (active) 23f else 18f
-        val target_chord = if (active) 20f else 16f
+        val target_lyrics = if (active) 32f else 24f
+        val target_chord = if (active) 26f else 20f
         val target_alpha = if (active) 1.0f else 0.6f
 
         item.animator = ValueAnimator.ofFloat(0f, 1f).apply {
@@ -237,7 +237,7 @@ class SongPlayActivity : AppCompatActivity() {
         val (title, audio_res_id, lrc_res_id) = if (song_number == 1) {
             Triple("Zawsze tam gdzie ty", R.raw.zawsze_tam_gdzie_ty_m, R.raw.zawsze_tam_gdzie_ty)
         } else {
-            Triple("Piosenka 2", R.raw.zawsze_tam_gdzie_ty_m, R.raw.zawsze_tam_gdzie_ty)
+            Triple("When I'm Gone", R.raw.cups_m, R.raw.cups)
         }
 
         songTitleText.text = title
