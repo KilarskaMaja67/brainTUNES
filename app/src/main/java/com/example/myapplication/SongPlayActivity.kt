@@ -84,7 +84,7 @@ class SongPlayActivity : AppCompatActivity() {
         // Blokuje reczne przesuwanie palcem, zeby nie zepsuc synchronizacji z muzyka
         lyricsScrollView.setOnTouchListener { _, _ -> true }
 
-        val song_number = intent.getIntExtra("NUMBER_OF_SONG", 1)
+        val song_number = intent.getIntExtra("NUMBER_OF_SONG", 1)   // MUST be the same key as in SongActivity
         load_song(song_number)
 
         CdurBtn.setOnClickListener {
@@ -294,6 +294,7 @@ class SongPlayActivity : AppCompatActivity() {
             media_player?.pause()
             paused_by_app = true
         }
+        handler.removeCallbacks(check_time_Runnable)   // don't move the ribbon while the screen is hidden
     }
 
     override fun onResume() {
@@ -303,6 +304,8 @@ class SongPlayActivity : AppCompatActivity() {
             media_player?.start()
             paused_by_app = false
         }
+        handler.removeCallbacks(check_time_Runnable)   // (avoid running it twice)
+        handler.post(check_time_Runnable)              // ribbon follows the music again
         blink_counter = 0
         exitHintText.text = "blink twice to exit"
 

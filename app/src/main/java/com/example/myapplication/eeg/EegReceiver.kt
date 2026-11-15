@@ -49,7 +49,7 @@ sealed interface EegEvent {
 class EegReceiver(
     private val laptopIp: String,
     private val listenPort: Int = 5005,
-    private val laptopPort: Int = 5007,
+    private val laptopPort: Int = 5006,
 ) {
     private val _events = MutableSharedFlow<EegEvent>(extraBufferCapacity = 64)
     val events: SharedFlow<EegEvent> = _events
