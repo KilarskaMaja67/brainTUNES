@@ -56,7 +56,7 @@ class SongActivity : AppCompatActivity() {
 
     private fun open_song(song_number: Int) {
         val intent = Intent(this, SongPlayActivity::class.java)
-        intent.putExtra("NUMBER_OF_SONG", song_number) // musi być identycznie jak w SongPlayActivity
+        intent.putExtra("NUMBER_OF_SONG", song_number) 
         startActivity(intent)
     }
 
@@ -90,7 +90,7 @@ class SongActivity : AppCompatActivity() {
 
     private fun update_look() {
         list_buttons.forEachIndexed { index, button ->
-            button.setSelectedLook(index == selected_index)   // ring + bigger / dimmed (BrainUi.kt)
+            button.setSelectedLook(index == selected_index)   
         }
     }
 
