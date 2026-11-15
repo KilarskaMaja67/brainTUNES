@@ -79,3 +79,8 @@ HALO headband ──Bluetooth──▶ Python (laptop) ──UDP / Wi-Fi──�
 **Maja Kilarska · Alicja Januszkiewicz · Natalia Domaradzka**
 
 Illustrations by our team's graphic designer.
+
+## Demo
+[![Demo](https://img.youtube.com/vi/YuESTg7UbEo/0.jpg)](https://youtu.be/YuESTg7UbEo)
+
+At the end of the demo our most musically talented member atempted to simultaneously play the flute and add guitare accords from our app in the background (due to the recording you have to listen closely to hear the accords)
