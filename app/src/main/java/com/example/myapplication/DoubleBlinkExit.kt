@@ -3,16 +3,6 @@ package com.example.myapplication
 import android.os.Handler
 import android.widget.TextView
 
-/**
- * "Blink twice to exit" - reusable on every screen.
- *
- *   private val blinkExit by lazy { DoubleBlinkExit(handler, exitHintText) { finish() } }
- *   ...
- *   AppControler.ustawAkcje(..., blink = { blinkExit.onBlink() })
- *
- * First blink shows "to exit, blink once more"; a second blink within [timeoutMs] calls [onExit].
- * Python ignores blinks for ~1.2 s after a command, so the timeout must be clearly longer than that.
- */
 class DoubleBlinkExit(
     private val handler: Handler,
     private val hintView: TextView,
