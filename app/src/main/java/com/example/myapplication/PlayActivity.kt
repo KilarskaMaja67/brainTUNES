@@ -90,6 +90,6 @@ class PlayActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        akordy.zwolnij()
+        akordy.free()
     }
 }

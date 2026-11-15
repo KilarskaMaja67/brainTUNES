@@ -82,15 +82,15 @@ class SongActivity : AppCompatActivity() {
     }
 
     private fun update_look() {
-        list_buttons.forEachIndexed { indeks, przycisk ->
-            if (indeks == selected_index) {
-                przycisk.scaleX = 1.15f
-                przycisk.scaleY = 1.15f
-                przycisk.alpha = 1.0f
+        list_buttons.forEachIndexed { index, button ->
+            if (index == selected_index) {
+                button.scaleX = 1.15f
+                button.scaleY = 1.15f
+                button.alpha = 1.0f
             } else {
-                przycisk.scaleX = 1.0f
-                przycisk.scaleY = 1.0f
-                przycisk.alpha = 0.6f
+                button.scaleX = 1.0f
+                button.scaleY = 1.0f
+                button.alpha = 0.6f
             }
         }
     }

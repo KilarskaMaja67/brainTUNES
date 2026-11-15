@@ -72,8 +72,8 @@ class ConfigActivity : AppCompatActivity() {
         // w trakcie kalibracji Python nie wysyla komend; po niej: lewo = Powtorz, prawo = Gotowe
         AppControler.ustawAkcje(
             up = { finish() },          // glowa w gore = powrot
-            lewo = { if (zakonczona) kliknij(btnPowtorz) },
-            prawo = { if (zakonczona) kliknij(btnGotowe) },
+            left = { if (zakonczona) kliknij(btnPowtorz) },
+            right = { if (zakonczona) kliknij(btnGotowe) },
         )
         if (!trwa && !zakonczona) zacznij()
     }

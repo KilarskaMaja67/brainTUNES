@@ -3,85 +3,103 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:clipChildren="false"
+    android:paddingVertical="16dp">
 
+    <!-- TYTUŁ PIOSENKI NA SAMEJ GÓRZE -->
     <TextView
-        android:id="@+id/chordHintText"
+        android:id="@+id/songTitleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Akord: C-dur (LEWO)"
-        android:textSize="24sp"
+        android:gravity="center"
+        android:paddingHorizontal="16dp"
+        android:text="Song Title"
+        android:textSize="30sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.06" />
+        app:layout_constraintVertical_bias="0.02" />
 
-    <TextView
-        android:id="@+id/lyricsText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="Przygotuj się..."
-        android:textSize="19sp"
+    <!-- CIĄGŁA WSTĘGA TEKSTU I AKORDÓW -->
+    <HorizontalScrollView
+        android:id="@+id/lyricsScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="130dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.16" />
+        app:layout_constraintVertical_bias="0.12">
 
+        <LinearLayout
+            android:id="@+id/lyricsRibbon"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:gravity="center_vertical"
+            android:orientation="horizontal" />
+
+    </HorizontalScrollView>
+
+    <!-- 4 PRZYCISKI AKORDÓW -->
     <Button
         android:id="@+id/CdurBtn"
         android:layout_width="155dp"
         android:layout_height="120dp"
-        android:text="C-dur\n(LEWO)"
+        android:text="C-dur\n(LEFT)"
         android:textSize="17sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.12"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.38" />
+        app:layout_constraintVertical_bias="0.43" />
 
     <Button
         android:id="@+id/GdurBtn"
         android:layout_width="155dp"
         android:layout_height="120dp"
-        android:text="G-dur\n(PRAWO)"
+        android:text="G-dur\n(RIGHT)"
         android:textSize="17sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.88"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.38" />
+        app:layout_constraintVertical_bias="0.43" />
 
     <Button
         android:id="@+id/AmolBtn"
         android:layout_width="155dp"
         android:layout_height="120dp"
-        android:text="a-moll\n(GÓRA)"
+        android:text="a-moll\n(UP)"
         android:textSize="17sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.12"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.63" />
+        app:layout_constraintVertical_bias="0.68" />
 
     <Button
         android:id="@+id/FdurBtn"
         android:layout_width="155dp"
         android:layout_height="120dp"
-        android:text="F-dur\n(DÓŁ)"
+        android:text="F-dur\n(DOWN)"
         android:textSize="17sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.88"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.63" />
+        app:layout_constraintVertical_bias="0.68" />
 
     <TextView
         android:id="@+id/exitHintText"
@@ -94,6 +112,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.93" />
+        app:layout_constraintVertical_bias="0.92" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

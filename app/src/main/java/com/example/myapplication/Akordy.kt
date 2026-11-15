@@ -6,15 +6,11 @@ import android.media.SoundPool
 import android.util.Log
 import android.widget.Button
 
-/**
- * Wspolny odtwarzacz akordow dla PlayActivity i SongPlayActivity.
- * Dzwieki wczytuja sie raz (przy tworzeniu), potem graja bez opoznien.
- */
 class Akordy(context: Context) {
 
     enum class Akord { C, G, AM, F }
 
-    private val zaladowane = mutableSetOf<Int>()
+    private val loaded = mutableSetOf<Int>()
 
     private val soundPool: SoundPool = SoundPool.Builder()
         .setMaxStreams(4)
@@ -27,12 +23,12 @@ class Akordy(context: Context) {
         .build()
         .apply {
             setOnLoadCompleteListener { _, sampleId, status ->
-                if (status == 0) zaladowane.add(sampleId)
-                else Log.e("Akordy", "Nie udalo sie zaladowac dzwieku $sampleId")
+                if (status == 0) loaded.add(sampleId)
+                else Log.e("Chords", "Failed to load audio $sampleId")
             }
         }
 
-    private val dzwieki: Map<Akord, Int> = mapOf(
+    private val sounds: Map<Akord, Int> = mapOf(
         Akord.C to soundPool.load(context, R.raw.akord_c, 1),
         Akord.G to soundPool.load(context, R.raw.akord_g, 1),
         Akord.AM to soundPool.load(context, R.raw.akord_am, 1),
@@ -40,21 +36,19 @@ class Akordy(context: Context) {
     )
 
     fun play(akord: Akord) {
-        val id = dzwieki.getValue(akord)
-        if (id !in zaladowane) {
-            Log.w("Akordy", "$akord jeszcze sie laduje")
+        val id = sounds.getValue(akord)
+        if (id !in loaded) {
+            Log.w("Chords", "$akord are still loading")
             return
         }
-        // ID, glosnosc lewy, glosnosc prawy, priorytet, petla (0 = brak), tempo
         soundPool.play(id, 1.0f, 1.0f, 1, 0, 1.0f)
     }
 
-    fun zwolnij() {
+    fun free() {
         soundPool.release()
     }
 }
 
-/** Krotka animacja "wcisniecia" przycisku. */
 fun Button.animation_click() {
     animate()
         .scaleX(1.08f)
