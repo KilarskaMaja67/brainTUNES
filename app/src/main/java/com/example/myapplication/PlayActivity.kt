@@ -21,7 +21,6 @@ class PlayActivity : AppCompatActivity() {
 
     private lateinit var exitHintText: TextView
 
-    // frames around the tiles - the ring of the played chord is drawn on them
     private lateinit var rings: Map<Akordy.Akord, View>
 
     private lateinit var akordy: Akordy
@@ -66,11 +65,10 @@ class PlayActivity : AppCompatActivity() {
             right = { GdurBtn.performClick() },   // G
             up = { AmolBtn.performClick() },    // a-moll
             down = { FdurBtn.performClick() },     // F
-            blink = { blink_to_exit() },     // mocne mrugniecie = powrot do menu
+            blink = { blink_to_exit() },     // blink=back
         )
     }
 
-    /** Plays the chord and puts a ring in its colour around its tile (the others lose theirs). */
     private fun play_chord(chord: Akordy.Akord) {
         akordy.play(chord)
         rings.forEach { (c, ring) -> ring.setRing(if (c == chord) chordColor(c) else null) }
